@@ -1,0 +1,21 @@
+# python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+venv/
+.venv/
+
+# data and models
+data/*
+models/*
+!data/.gitkeep
+!models/.gitkeep
+*.csv
+*.joblib
+
+# frontend
+node_modules/
+frontend/build/
+
+# env
+.env
