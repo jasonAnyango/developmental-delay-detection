@@ -10,6 +10,8 @@ data/*
 models/*
 !data/.gitkeep
 !models/.gitkeep
+
+!backend/model/*.joblib
 *.csv
 *.joblib
 
