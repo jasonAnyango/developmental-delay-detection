@@ -1,6 +1,7 @@
 from config import Config
 from flask import Flask, jsonify
 from flask_cors import CORS
+from model_store import artifacts
 
 app = Flask(__name__)
 app.config.from_object(Config)
