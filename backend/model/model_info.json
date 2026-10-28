@@ -1,0 +1,17 @@
+{
+ "python": "3.13.18",
+ "scikit-learn": "1.6.1",
+ "numpy": "2.1.3",
+ "joblib": "1.6.0",
+ "pandas": "2.2.3",
+ "features": [
+  "z_cognitive",
+  "z_motor",
+  "z_language",
+  "z_social_emotional"
+ ],
+ "n_estimators": 200,
+ "contamination": 0.05,
+ "random_state": 42,
+ "train_rows": 1965
+}
