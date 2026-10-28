@@ -13,7 +13,6 @@ models/*
 
 !backend/model/*.joblib
 *.csv
-*.joblib
 
 # frontend
 node_modules/
