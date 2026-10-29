@@ -1,16 +1,26 @@
+from assessment import assess_batch, assess_record
+from config import Config
+from extensions import db
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-
-from assessment import assess_record, assess_batch
-from config import Config
 from model_store import artifacts
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 
 app = Flask(__name__)
 app.config.from_object(Config)
+db.init_app(app)
 
 origins = [origin.strip() for origin in Config.FRONTEND_ORIGIN.split(',')]
 CORS(app, origins=origins)
 
+@app.route('/api/health/db')
+def health_db():
+    try:
+        db.session.execute(text('SELECT 1'))
+    except SQLAlchemyError:
+        return jsonify({'database': 'unavailable'}), 503
+    return jsonify({'database': 'ok'})
 
 @app.route('/api/health')
 def health():
