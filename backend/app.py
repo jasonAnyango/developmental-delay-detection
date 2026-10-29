@@ -16,6 +16,9 @@ CORS(app, origins=origins)
 def health():
     return jsonify({'status': 'ok'})
 
+@app.route('/api/evaluation')
+def evaluation():
+    return jsonify(artifacts['evaluation'])
 
 @app.route('/api/score', methods=['POST'])
 def score():

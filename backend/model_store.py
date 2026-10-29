@@ -10,6 +10,7 @@ JSON_FILES = {
     'bands': 'supported_bands.json',
     'items': 'item_domain_map.json',
     'info': 'model_info.json',
+    'evaluation': 'evaluation_results.json',
 }
 
 
