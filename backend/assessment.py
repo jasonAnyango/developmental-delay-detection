@@ -58,3 +58,29 @@ def assess_record(data, artifacts):
         'warnings': build_warnings(clean, result),
     }
     return payload, [], 200
+
+MAX_BATCH = 100
+
+
+def assess_batch(data, artifacts):
+    if isinstance(data, dict):
+        data = data.get('records')
+    if not isinstance(data, list):
+        return None, ['Send a list of records, or an object with a records list']
+    if len(data) == 0:
+        return None, ['The list of records is empty']
+    if len(data) > MAX_BATCH:
+        return None, [f'Too many records: the limit is {MAX_BATCH} per request']
+
+    results = []
+    failed = 0
+    for index, record in enumerate(data):
+        payload, errors, status = assess_record(record, artifacts)
+        if errors:
+            failed += 1
+            child_id = record.get('child_id') if isinstance(record, dict) else None
+            results.append({'index': index, 'child_id': child_id, 'errors': errors})
+        else:
+            results.append({'index': index, 'child_id': payload['child_id'], 'result': payload})
+
+    return {'total': len(data), 'failed': failed, 'results': results}, []
