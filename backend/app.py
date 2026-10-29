@@ -2,6 +2,7 @@ import os
 
 from assessment import assess_batch, assess_record
 from config import BASE_DIR, Config
+from decorators import login_required
 from extensions import db, migrate
 from flask import Flask, jsonify, request
 from flask_cors import CORS
@@ -35,10 +36,12 @@ def health():
     return jsonify({'status': 'ok'})
 
 @app.route('/api/evaluation')
+@login_required
 def evaluation():
     return jsonify(artifacts['evaluation'])
 
 @app.route('/api/score', methods=['POST'])
+@login_required
 def score():
     payload, errors, status = assess_record(request.get_json(silent=True), artifacts)
     if errors:
@@ -46,6 +49,7 @@ def score():
     return jsonify(payload)
 
 @app.route('/api/score/batch', methods=['POST'])
+@login_required
 def score_batch():
     payload, errors = assess_batch(request.get_json(silent=True), artifacts)
     if errors:
