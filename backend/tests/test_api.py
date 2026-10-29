@@ -6,8 +6,8 @@ DOMAINS = ['cognitive', 'motor', 'language', 'social_emotional']
 
 
 @pytest.fixture
-def client():
-    return app.test_client()
+def client(auth_client):
+    return auth_client
 
 
 def record(child_id='C1', age=14, achieved=9, assessed=10, skip=()):

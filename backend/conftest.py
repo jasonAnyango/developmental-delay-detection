@@ -19,3 +19,21 @@ def db_client():
         yield app.test_client()
         db.session.remove()
         db.drop_all()
+
+@pytest.fixture
+def auth_client():
+    from app import app
+    from extensions import db
+    from models import Doctor
+    from security import create_token
+
+    with app.app_context():
+        db.create_all()
+        doctor = Doctor(email='dr.test@example.com', password_hash='not-used', full_name='Dr Test')
+        db.session.add(doctor)
+        db.session.commit()
+        client = app.test_client()
+        client.environ_base['HTTP_AUTHORIZATION'] = 'Bearer ' + create_token(doctor.id)
+        yield client
+        db.session.remove()
+        db.drop_all()
