@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
-from assessment import assess_record
+from assessment import assess_record, assess_batch
 from config import Config
 from model_store import artifacts
 
@@ -24,6 +24,12 @@ def score():
         return jsonify({'errors': errors}), status
     return jsonify(payload)
 
+@app.route('/api/score/batch', methods=['POST'])
+def score_batch():
+    payload, errors = assess_batch(request.get_json(silent=True), artifacts)
+    if errors:
+        return jsonify({'errors': errors}), 400
+    return jsonify(payload)
 
 if __name__ == '__main__':
     app.run(debug=True)
