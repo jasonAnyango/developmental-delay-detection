@@ -21,6 +21,18 @@ def test_health(client):
     assert response.status_code == 200
     assert response.get_json() == {'status': 'ok'}
 
+def test_evaluation_results(client):
+    response = client.get('/api/evaluation')
+    body = response.get_json()
+    assert response.status_code == 200
+    assert body['test_set']['rows'] == 516
+    assert body['test_set']['isolation_forest']['flagged'] == 27
+    assert body['test_set']['rule_based']['flagged'] == 71
+    assert 'overlap' in body
+    assert 'score_distribution' in body
+
+def test_evaluation_rejects_post(client):
+    assert client.post('/api/evaluation').status_code == 405
 
 def test_cors_allows_frontend_origin(client):
     response = client.get('/api/health', headers={'Origin': 'http://localhost:5173'})
