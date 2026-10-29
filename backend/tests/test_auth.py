@@ -124,8 +124,9 @@ def test_login_with_correct_password(db_client):
     response = db_client.post(LOGIN, json={'email': 'dr.a@example.com', 'password': 'longenough1'})
     body = response.get_json()
     assert response.status_code == 200
-    assert body['email'] == 'dr.a@example.com'
-    assert set(body) == {'id', 'email', 'full_name'}
+    assert body['doctor']['email'] == 'dr.a@example.com'
+    assert set(body['doctor']) == {'id', 'email', 'full_name'}
+    assert set(body) == {'token', 'expires_in', 'doctor'}
 
 
 def test_login_ignores_email_case_and_spaces(db_client):
@@ -189,3 +190,20 @@ def test_each_doctor_logs_in_with_their_own_password(db_client):
     assert db_client.post(LOGIN, json={'email': 'a@example.com', 'password': 'passwordone1'}).status_code == 200
     assert db_client.post(LOGIN, json={'email': 'a@example.com', 'password': 'passwordtwo2'}).status_code == 401
     assert db_client.post(LOGIN, json={'email': 'b@example.com', 'password': 'passwordtwo2'}).status_code == 200
+    
+def test_login_token_belongs_to_the_doctor(db_client):
+    from app import app
+    from security import verify_token
+
+    register_doctor(db_client)
+    body = db_client.post(LOGIN, json={'email': 'dr.a@example.com', 'password': 'longenough1'}).get_json()
+    doctor_id, error = verify_token(body['token'])
+    assert error is None
+    assert doctor_id == body['doctor']['id']
+    assert body['expires_in'] == app.config['TOKEN_HOURS'] * 3600
+
+
+def test_failed_login_gives_no_token(db_client):
+    register_doctor(db_client)
+    body = db_client.post(LOGIN, json={'email': 'dr.a@example.com', 'password': 'wrongpassword'}).get_json()
+    assert 'token' not in body
