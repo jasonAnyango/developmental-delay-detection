@@ -1,15 +1,20 @@
+import os
+
 from assessment import assess_batch, assess_record
-from config import Config
-from extensions import db
+from config import BASE_DIR, Config
+from extensions import db, migrate
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from model_store import artifacts
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
+import models  # noqa: F401
+
 app = Flask(__name__)
 app.config.from_object(Config)
 db.init_app(app)
+migrate.init_app(app, db, directory=os.path.join(BASE_DIR, 'migrations'))
 
 origins = [origin.strip() for origin in Config.FRONTEND_ORIGIN.split(',')]
 CORS(app, origins=origins)
