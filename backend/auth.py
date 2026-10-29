@@ -1,11 +1,11 @@
 import re
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, current_app, jsonify, request
 from sqlalchemy.exc import IntegrityError
 
 from extensions import db
 from models import Doctor
-from security import hash_password, verify_password
+from security import create_token, hash_password, verify_password
 
 auth = Blueprint('auth', __name__, url_prefix='/api/auth')
 
@@ -96,4 +96,8 @@ def login():
     if doctor is None or not password_ok:
         return jsonify({'errors': [BAD_LOGIN]}), 401
 
-    return jsonify({'id': doctor.id, 'email': doctor.email, 'full_name': doctor.full_name})
+    return jsonify({
+    'token': create_token(doctor.id),
+    'expires_in': current_app.config['TOKEN_HOURS'] * 3600,
+    'doctor': {'id': doctor.id, 'email': doctor.email, 'full_name': doctor.full_name},
+    })
