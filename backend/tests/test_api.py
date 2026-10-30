@@ -192,6 +192,8 @@ def test_batch_mixed_records(client):
 def test_batch_matches_single_endpoint(client):
     single = client.post('/api/score', json=record('A')).get_json()
     batch = client.post('/api/score/batch', json=[record('A')]).get_json()
+    single.pop('assessment_id')
+    batch['results'][0]['result'].pop('assessment_id')
     assert batch['results'][0]['result'] == single
 
 

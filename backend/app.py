@@ -4,7 +4,7 @@ from assessment import assess_batch, assess_record
 from config import BASE_DIR, Config
 from decorators import login_required
 from extensions import db, migrate
-from flask import Flask, jsonify, request
+from flask import Flask, g, jsonify, request
 from flask_cors import CORS
 from model_store import artifacts
 from sqlalchemy import text
@@ -40,21 +40,34 @@ def health():
 def evaluation():
     return jsonify(artifacts['evaluation'])
 
+SAVE_ERROR = 'The assessment could not be saved'
+
+
 @app.route('/api/score', methods=['POST'])
 @login_required
 def score():
-    payload, errors, status = assess_record(request.get_json(silent=True), artifacts)
+    try:
+        payload, errors, status = assess_record(request.get_json(silent=True), artifacts, g.doctor)
+        if not errors:
+            db.session.commit()
+    except SQLAlchemyError:
+        db.session.rollback()
+        return jsonify({'errors': [SAVE_ERROR]}), 500
     if errors:
         return jsonify({'errors': errors}), status
     return jsonify(payload)
 
+
 @app.route('/api/score/batch', methods=['POST'])
 @login_required
 def score_batch():
-    payload, errors = assess_batch(request.get_json(silent=True), artifacts)
+    try:
+        payload, errors = assess_batch(request.get_json(silent=True), artifacts, g.doctor)
+        if not errors:
+            db.session.commit()
+    except SQLAlchemyError:
+        db.session.rollback()
+        return jsonify({'errors': [SAVE_ERROR]}), 500
     if errors:
         return jsonify({'errors': errors}), 400
     return jsonify(payload)
-
-if __name__ == '__main__':
-    app.run(debug=True)
