@@ -1,5 +1,6 @@
 from detection import score_with_models
 from scoring import MIN_ITEMS, prepare_scores
+from storage import save_assessment
 from validation import DOMAINS, validate_input
 
 
@@ -19,7 +20,7 @@ def build_warnings(clean, result):
     return warnings
 
 
-def assess_record(data, artifacts):
+def assess_record(data, artifacts, doctor=None):
     clean, errors = validate_input(data)
     if errors:
         return None, errors, 400
@@ -57,12 +58,16 @@ def assess_record(data, artifacts):
         },
         'warnings': build_warnings(clean, result),
     }
+    if doctor is not None:
+        assessment = save_assessment(doctor, clean, result, models)
+        payload['assessment_id'] = assessment.id
+
     return payload, [], 200
 
 MAX_BATCH = 100
 
 
-def assess_batch(data, artifacts):
+def assess_batch(data, artifacts, doctor=None):
     if isinstance(data, dict):
         data = data.get('records')
     if not isinstance(data, list):
@@ -75,7 +80,7 @@ def assess_batch(data, artifacts):
     results = []
     failed = 0
     for index, record in enumerate(data):
-        payload, errors, status = assess_record(record, artifacts)
+        payload, errors, status = assess_record(record, artifacts, doctor)
         if errors:
             failed += 1
             child_id = record.get('child_id') if isinstance(record, dict) else None

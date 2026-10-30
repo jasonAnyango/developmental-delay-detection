@@ -18,6 +18,8 @@ def validate_input(data):
         errors.append('child_id is required and must be a string or number')
     elif str(child_id).strip() == '':
         errors.append('child_id must not be empty')
+    elif len(str(child_id).strip()) > 64:
+        errors.append('child_id must be at most 64 characters')
 
     age = data.get('age_months')
     if age is None:
