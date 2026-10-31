@@ -27,7 +27,7 @@ class Child(db.Model):
 
     doctor = db.relationship('Doctor', back_populates='children')
     assessments = db.relationship('Assessment', back_populates='child', cascade='all, delete-orphan',
-                                  order_by='Assessment.created_at')
+                                  order_by='Assessment.created_at, Assessment.id')
 
 
 class Assessment(db.Model):
