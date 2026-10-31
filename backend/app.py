@@ -82,3 +82,6 @@ def score_batch():
     if errors:
         return jsonify({'errors': errors}), 400
     return jsonify(payload)
+
+if __name__ == '__main__':
+    app.run(debug=True)
