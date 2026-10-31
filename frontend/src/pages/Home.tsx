@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { api } from '../api/api.ts'
 
 type Connection = 'checking' | 'connected' | 'unavailable'
@@ -26,6 +27,14 @@ export default function Home() {
         {connection === 'checking' && 'checking...'}
         {connection === 'connected' && 'connected'}
         {connection === 'unavailable' && 'unavailable'}
+      </p>
+      <p className="flex gap-4 text-sm">
+        <Link to="/login" className="text-blue-700 underline">
+          Sign in
+        </Link>
+        <Link to="/register" className="text-blue-700 underline">
+          Create account
+        </Link>
       </p>
     </main>
   )
