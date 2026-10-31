@@ -39,3 +39,16 @@ def assessment_counts(doctor):
         .group_by(Assessment.child_id)
     )
     return dict(rows)
+
+def history_of(doctor, child_id):
+    child = find_child(doctor, child_id)
+    if child is None:
+        return None, []
+    assessments = (
+        assessments_of(doctor)
+        .filter(Assessment.child_id == child.id)
+        .order_by(Assessment.created_at, Assessment.id)
+        .options(selectinload(Assessment.predictions))
+        .all()
+    )
+    return child, assessments

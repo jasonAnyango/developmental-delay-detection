@@ -33,6 +33,15 @@ def health_db():
         return jsonify({'database': 'unavailable'}), 503
     return jsonify({'database': 'ok'})
 
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({'errors': ['Not found']}), 404
+
+
+@app.errorhandler(405)
+def method_not_allowed(error):
+    return jsonify({'errors': ['Method not allowed']}), 405
+
 @app.route('/api/health')
 def health():
     return jsonify({'status': 'ok'})
