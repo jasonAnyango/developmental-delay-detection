@@ -1,15 +1,21 @@
 import { useState, type FormEvent } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { api } from '../api/api.ts'
 import { ApiError } from '../api/client.ts'
 import AuthCard from '../components/AuthCard.tsx'
+import { useAuth } from '../auth/useAuth.ts'
 import FormField from '../components/FormField.tsx'
 import { cleanEmail, validateLogin, type FieldErrors } from '../validation.ts'
 
 export default function Login() {
-  const navigate = useNavigate()
   const location = useLocation()
+  const { login, expired } = useAuth()
   const registered = location.state?.registered === true
+  const notice = registered
+    ? 'Account created. Sign in to continue.'
+    : expired
+      ? 'Your session has expired. Sign in again.'
+      : undefined
 
   const [email, setEmail] = useState<string>(location.state?.email ?? '')
   const [password, setPassword] = useState('')
@@ -32,8 +38,7 @@ export default function Login() {
 
     setSubmitting(true)
     try {
-      await api.login({ email: cleanEmail(email), password })
-      navigate('/')
+      login(await api.login({ email: cleanEmail(email), password }))
     } catch (error) {
       setServerErrors(error instanceof ApiError ? error.messages : ['Something went wrong. Please try again.'])
     } finally {
@@ -44,7 +49,7 @@ export default function Login() {
   return (
     <AuthCard
       title="Sign in"
-      notice={registered ? 'Account created. Sign in to continue.' : undefined}
+      notice={notice}
       errors={serverErrors}
     >
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
