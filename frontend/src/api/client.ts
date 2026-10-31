@@ -11,10 +11,20 @@ export class ApiError extends Error {
   }
 }
 
+let authToken: string | null = null
+let onUnauthorized: (() => void) | null = null
+
+export function setAuthToken(token: string | null) {
+  authToken = token
+}
+
+export function setUnauthorizedHandler(handler: (() => void) | null) {
+  onUnauthorized = handler
+}
+
 type RequestOptions = {
   method?: string
   body?: unknown
-  token?: string | null
 }
 
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
@@ -22,8 +32,8 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   if (options.body !== undefined) {
     headers['Content-Type'] = 'application/json'
   }
-  if (options.token) {
-    headers.Authorization = `Bearer ${options.token}`
+  if (authToken) {
+    headers.Authorization = `Bearer ${authToken}`
   }
 
   let response: Response
@@ -40,10 +50,20 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   const data = await response.json().catch(() => null)
 
   if (!response.ok) {
+    if (response.status === 401 && authToken) {
+      onUnauthorized?.()
+    }
     const messages =
       data && Array.isArray(data.errors) ? (data.errors as string[]) : [`Request failed (${response.status})`]
     throw new ApiError(response.status, messages)
   }
 
   return data as T
+}
+
+export function errorMessages(error: unknown): string[] {
+  if (error instanceof ApiError) {
+    return error.messages
+  }
+  return ['Something went wrong. Please try again.']
 }
