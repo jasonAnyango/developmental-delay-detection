@@ -10,6 +10,7 @@ from model_store import artifacts
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from auth import auth
+from children import children
 
 import models  # noqa: F401
 
@@ -19,6 +20,7 @@ db.init_app(app)
 migrate.init_app(app, db, directory=os.path.join(BASE_DIR, 'migrations'))
 
 app.register_blueprint(auth)
+app.register_blueprint(children)
 
 origins = [origin.strip() for origin in Config.FRONTEND_ORIGIN.split(',')]
 CORS(app, origins=origins)

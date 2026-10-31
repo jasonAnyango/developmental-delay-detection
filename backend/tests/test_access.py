@@ -1,6 +1,7 @@
 import pytest
 
-from access import assessments_of, children_of, find_assessment, find_child
+from access import (assessment_counts, assessments_of, children_of, find_assessment, find_child,
+                    latest_assessments)
 from app import app
 from extensions import db
 from models import Child, Doctor
@@ -87,3 +88,18 @@ def test_another_doctor_submitting_the_same_child_id_does_not_touch_it(two_docto
     alice_child = Child.query.filter_by(doctor_id=alice.id).one()
     assert len(alice_child.assessments) == 2
     assert sorted(a.id for a in alice_child.assessments) == sorted(alice_ids)
+    
+def test_latest_assessments_only_covers_own_children(two_doctors):
+    alice, bob, alice_ids, bob_ids = two_doctors
+    alice_children = {c.id for c in children_of(alice)}
+    bob_children = {c.id for c in children_of(bob)}
+    assert set(latest_assessments(alice)) == alice_children
+    assert set(latest_assessments(bob)) == bob_children
+    assert latest_assessments(alice)[next(iter(alice_children))].id == max(alice_ids)
+
+
+def test_assessment_counts_only_cover_own_children(two_doctors):
+    alice, bob, _, _ = two_doctors
+    assert sorted(assessment_counts(alice).values()) == [2]
+    assert sorted(assessment_counts(bob).values()) == [1, 1]
+    assert set(assessment_counts(alice)).isdisjoint(set(assessment_counts(bob)))
