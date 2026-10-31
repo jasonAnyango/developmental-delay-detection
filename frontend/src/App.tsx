@@ -1,4 +1,5 @@
 import { Route, Routes } from 'react-router-dom'
+import Layout from './components/Layout.tsx'
 import { GuestRoute, ProtectedRoute } from './components/RouteGuards.tsx'
 import Home from './pages/Home.tsx'
 import Login from './pages/Login.tsx'
@@ -9,7 +10,9 @@ export default function App() {
   return (
     <Routes>
       <Route element={<ProtectedRoute />}>
-        <Route path="/" element={<Home />} />
+        <Route element={<Layout />}>
+          <Route path="/" element={<Home />} />
+        </Route>
       </Route>
       <Route element={<GuestRoute />}>
         <Route path="/login" element={<Login />} />
