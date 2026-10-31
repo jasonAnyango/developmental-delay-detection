@@ -1,6 +1,6 @@
 from flask import Blueprint, g, jsonify
 
-from access import assessment_counts, children_of, latest_assessments
+from access import assessment_counts, children_of, history_of, latest_assessments
 from decorators import login_required
 from serializers import format_time, serialize_assessment
 
@@ -26,3 +26,18 @@ def list_children():
 
     items.sort(key=lambda item: item['latest']['assessed_at'] if item['latest'] else '', reverse=True)
     return jsonify({'children': items})
+
+@children.route('/children/<int:child_id>')
+@login_required
+def child_history(child_id):
+    child, assessments = history_of(g.doctor, child_id)
+    if child is None:
+        return jsonify({'errors': ['Child not found']}), 404
+
+    return jsonify({
+        'id': child.id,
+        'child_id': child.child_ref,
+        'created_at': format_time(child.created_at),
+        'assessment_count': len(assessments),
+        'assessments': [serialize_assessment(assessment) for assessment in assessments],
+    })
