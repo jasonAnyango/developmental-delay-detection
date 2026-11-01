@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { api } from '../api/api.ts'
 import { errorMessages } from '../api/client.ts'
 import FormField from '../components/FormField.tsx'
@@ -18,7 +18,8 @@ function emptyCounts() {
 
 export default function Assess() {
   const navigate = useNavigate()  
-  const [childId, setChildId] = useState('')
+  const [params] = useSearchParams()
+  const [childId, setChildId] = useState(params.get('child') ?? '')
   const [age, setAge] = useState('')
   const [counts, setCounts] = useState(emptyCounts)
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
