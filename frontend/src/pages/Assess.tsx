@@ -1,9 +1,12 @@
 import { useState, type FormEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { api } from '../api/api.ts'
 import { errorMessages } from '../api/client.ts'
 import FormField from '../components/FormField.tsx'
 import { DOMAINS, type DomainName } from '../domains.ts'
 import { validateAssessment, type AssessmentValues, type FieldErrors } from '../validation.ts'
+
+
 
 const SUPPORTED_AGES = 'Supported ages: 4.1 to 8.3, 12.0 to 16.0 and 22.5 to 29.3 months.'
 
@@ -14,12 +17,12 @@ function emptyCounts() {
 }
 
 export default function Assess() {
+  const navigate = useNavigate()  
   const [childId, setChildId] = useState('')
   const [age, setAge] = useState('')
   const [counts, setCounts] = useState(emptyCounts)
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [serverErrors, setServerErrors] = useState<string[]>([])
-  const [savedId, setSavedId] = useState<number | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
   function setCount(domain: DomainName, field: 'achieved' | 'assessed', value: string) {
@@ -33,7 +36,6 @@ export default function Assess() {
     const { errors, input } = validateAssessment({ child_id: childId, age_months: age, counts })
     setFieldErrors(errors)
     setServerErrors([])
-    setSavedId(null)
     const first = Object.keys(errors)[0]
     if (first || !input) {
       document.getElementById(first === 'domains' ? 'cognitive_achieved' : first)?.focus()
@@ -43,10 +45,7 @@ export default function Assess() {
     setSubmitting(true)
     try {
       const result = await api.score(input)
-      setSavedId(result.assessment_id)
-      setChildId('')
-      setAge('')
-      setCounts(emptyCounts())
+      navigate('/assess/result', { state: { result } })
     } catch (error) {
       setServerErrors(errorMessages(error))
     } finally {
@@ -57,12 +56,6 @@ export default function Assess() {
   return (
     <div className="flex max-w-2xl flex-col gap-4">
       <h1 className="text-2xl font-semibold">New assessment</h1>
-
-      {savedId !== null && (
-        <p role="status" className="rounded border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-900">
-          Assessment saved. Reference {savedId}.
-        </p>
-      )}
       {serverErrors.length > 0 && (
         <div role="alert" className="rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-900">
           {serverErrors.map((message) => (
