@@ -7,6 +7,7 @@ import Login from './pages/Login.tsx'
 import NotFound from './pages/NotFound.tsx'
 import Register from './pages/Register.tsx'
 import Result from './pages/Result.tsx'
+import Children from './pages/Children.tsx'
 
 export default function App() {
   return (
@@ -14,6 +15,7 @@ export default function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<Layout />}>
           <Route path="/" element={<Dashboard />} />
+          <Route path="/children" element={<Children />} />
           <Route path="/assess" element={<Assess />} />
           <Route path="/assess/result" element={<Result />} />
         </Route>

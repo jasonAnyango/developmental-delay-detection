@@ -3,6 +3,7 @@ import { useAuth } from '../auth/useAuth.ts'
 
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard' },
+  { to: '/children', label: 'Children' },
   { to: '/assess', label: 'New assessment' },
 ]
 
