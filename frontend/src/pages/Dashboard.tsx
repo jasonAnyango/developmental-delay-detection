@@ -1,47 +1,15 @@
-import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { api, type ChildSummary } from '../api/api.ts'
-import { errorMessages } from '../api/client.ts'
 import FlaggedDomainsChart from '../components/FlaggedDomainsChart.tsx'
+import LoadError from '../components/LoadError.tsx'
 import StatTile from '../components/StatTile.tsx'
 import { DOMAINS } from '../domains.ts'
 import { isFlagged } from '../flags.ts'
+import { useChildren } from '../hooks/useChildren.ts'
 
 export default function Dashboard() {
-  const [children, setChildren] = useState<ChildSummary[] | null>(null)
-  const [errors, setErrors] = useState<string[]>([])
+    const { children, errors, retry } = useChildren()
 
-  const [attempt, setAttempt] = useState(0)
-
-  useEffect(() => {
-    let active = true
-    api
-      .children()
-      .then((response) => active && setChildren(response.children))
-      .catch((error) => active && setErrors(errorMessages(error)))
-    return () => {
-      active = false
-    }
-  }, [attempt])
-
-  function retry() {
-    setErrors([])
-    setChildren(null)
-    setAttempt((current) => current + 1)
-  }
-
-  if (errors.length > 0) {
-    return (
-      <div role="alert" className="flex max-w-xl flex-col gap-2 rounded border border-red-300 bg-red-50 px-4 py-3 text-red-900">
-        {errors.map((message) => (
-          <p key={message}>{message}</p>
-        ))}
-        <button onClick={retry} className="w-fit text-blue-700 underline">
-          Try again
-        </button>
-      </div>
-    )
-  }
+  if (errors.length > 0) return <LoadError errors={errors} onRetry={retry} />
 
   if (children === null) return <p className="text-slate-600">Loading...</p>
 

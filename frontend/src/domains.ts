@@ -6,3 +6,9 @@ export const DOMAINS: { key: DomainName; label: string }[] = [
   { key: 'language', label: 'Language' },
   { key: 'social_emotional', label: 'Social-emotional' },
 ]
+
+
+export const DOMAIN_LABELS = Object.fromEntries(DOMAINS.map(({ key, label }) => [key, label])) as Record<
+  DomainName,
+  string
+>
