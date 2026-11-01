@@ -6,10 +6,14 @@ type Props = {
   error?: string
   type?: string
   autoComplete?: string
+  inputMode?: 'numeric' | 'decimal'
+  hint?: string
 }
 
-export default function FormField({ id, label, value, onChange, error, type = 'text', autoComplete }: Props) {
+export default function FormField({ id, label, value, onChange, error, type = 'text', autoComplete, inputMode, hint }: Props) {
   const errorId = `${id}-error`
+  const hintId = `${id}-hint`
+  const describedBy = [hint ? hintId : '', error ? errorId : ''].filter(Boolean).join(' ')
   return (
     <div className="flex flex-col gap-1">
       <label htmlFor={id} className="text-sm font-medium text-slate-800">
@@ -21,13 +25,19 @@ export default function FormField({ id, label, value, onChange, error, type = 't
         type={type}
         value={value}
         autoComplete={autoComplete}
+        inputMode={inputMode}
         onChange={(event) => onChange(event.target.value)}
         aria-invalid={error ? true : undefined}
-        aria-describedby={error ? errorId : undefined}
+        aria-describedby={describedBy || undefined}
         className={`rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 ${
           error ? 'border-red-600' : 'border-slate-300'
         }`}
       />
+      {hint && (
+        <p id={hintId} className="text-xs text-slate-500">
+          {hint}
+        </p>
+      )}
       {error && (
         <p id={errorId} className="text-sm text-red-700">
           {error}
