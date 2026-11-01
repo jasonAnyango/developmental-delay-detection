@@ -1,21 +1,12 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import type { ChildSummary } from '../api/api.ts'
 import LoadError from '../components/LoadError.tsx'
-import { DOMAIN_LABELS } from '../domains.ts'
-import { isFlagged } from '../flags.ts'
+import { flaggedInText, isFlagged } from '../flags.ts'
 import { formatDate } from '../format.ts'
 import { useChildren } from '../hooks/useChildren.ts'
 
 type Filter = 'flagged' | 'all'
 
-function flaggedText(child: ChildSummary) {
-  const latest = child.latest
-  if (!latest || !isFlagged(latest)) return '-'
-  const domains = latest.rule_based.flagged_domains
-  if (domains.length === 0) return 'Unusual overall pattern'
-  return domains.map((domain) => DOMAIN_LABELS[domain]).join(', ')
-}
 
 export default function Children() {
   const { children, errors, retry } = useChildren()
@@ -119,10 +110,12 @@ export default function Children() {
               {shown.map((child) => (
                 <tr key={child.id} className="border-b border-slate-200" data-testid="row">
                   <th scope="row" className="py-2 pr-4 font-medium">
-                    {child.child_id}
+                    <Link to={`/children/${child.id}`} className="text-blue-700 underline">
+                      {child.child_id}
+                    </Link>
                   </th>
                   <td className="py-2 pr-4">{child.latest ? (isFlagged(child.latest) ? 'Flagged' : 'Not flagged') : '-'}</td>
-                  <td className="py-2 pr-4">{flaggedText(child)}</td>
+                  <td className="py-2 pr-4">{child.latest ? flaggedInText(child.latest) : '-'}</td>
                   <td className="py-2 pr-4">{child.latest?.age_months ?? '-'}</td>
                   <td className="py-2 pr-4">{child.latest ? formatDate(child.latest.assessed_at) : '-'}</td>
                   <td className="py-2">{child.assessment_count}</td>

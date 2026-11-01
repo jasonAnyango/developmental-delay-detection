@@ -50,6 +50,13 @@ export type ChildSummary = {
   latest: Assessment | null
 }
 export type ChildrenResponse = { children: ChildSummary[] }
+export type ChildHistory = {
+  id: number
+  child_id: string
+  created_at: string
+  assessment_count: number
+  assessments: Assessment[]
+}
 
 export const api = {
   health: () => request<Health>('/health'),
@@ -57,5 +64,6 @@ export const api = {
   register: (input: RegisterInput) => request<Doctor>('/auth/register', { method: 'POST', body: input }),
   login: (input: LoginInput) => request<LoginResponse>('/auth/login', { method: 'POST', body: input }),
   children: () => request<ChildrenResponse>('/children'),
+  child: (id: number) => request<ChildHistory>(`/children/${id}`),
   score: (input: ScoreInput) => request<ScoreResult>('/score', { method: 'POST', body: input }),
 }
