@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import type { LoginResponse } from '../api/api.ts'
 import { setAuthToken, setUnauthorizedHandler } from '../api/client.ts'
 import { AuthContext } from './AuthContext.ts'
-import { clearSession, loadSession, saveSession } from './session.ts'
+import { clearSession, loadSession, saveSession, SESSION_KEY } from './session.ts'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [initial] = useState(() => {
@@ -38,6 +38,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUnauthorizedHandler(() => endSession(true))
     return () => setUnauthorizedHandler(null)
   }, [endSession])
+
+  useEffect(() => {
+    function onStorage(event: StorageEvent) {
+      if (event.key !== null && event.key !== SESSION_KEY) return
+      const loaded = loadSession()
+      setAuthToken(loaded.session?.token ?? null)
+      setSession(loaded.session)
+      setExpired(loaded.expired)
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [])
 
   useEffect(() => {
     if (!session) return

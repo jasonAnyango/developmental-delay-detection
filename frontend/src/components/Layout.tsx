@@ -22,14 +22,14 @@ export default function Layout() {
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
           <span className="text-lg font-semibold">SOPHIA</span>
-          <nav aria-label="Main" className="flex flex-1 gap-4 text-sm">
+          <nav aria-label="Main" className="order-last flex w-full flex-wrap gap-x-4 gap-y-1 text-sm sm:order-none sm:w-auto sm:flex-1">
             {NAV_ITEMS.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
                 end={item.to === '/'}
                 className={({ isActive }) =>
-                  isActive ? 'font-medium text-blue-700 underline' : 'text-slate-700 hover:text-blue-700'
+                  `whitespace-nowrap ${isActive ? 'font-medium text-blue-700 underline' : 'text-slate-700 hover:text-blue-700'}`
                 }
               >
                 {item.label}
