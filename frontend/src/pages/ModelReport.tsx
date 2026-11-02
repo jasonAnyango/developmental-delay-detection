@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import AgeBandChart from '../components/AgeBandChart.tsx'
 import LoadError from '../components/LoadError.tsx'
 import ScoreHistogram from '../components/ScoreHistogram.tsx'
+import StatRow from '../components/StatRow.tsx'
 import StatTile from '../components/StatTile.tsx'
 import { DOMAINS } from '../domains.ts'
 import { useEvaluation } from '../hooks/useEvaluation.ts'
@@ -26,12 +27,12 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 
 function Table({ columns, rows }: { columns: string[]; rows: (string | number)[][] }) {
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full max-w-2xl text-left text-sm">
+    <div className="panel max-w-2xl overflow-x-auto">
+      <table className="data-table">
         <thead>
-          <tr className="border-b border-slate-300">
+          <tr>
             {columns.map((column) => (
-              <th key={column} scope="col" className="py-2 pr-4 font-medium">
+              <th key={column} scope="col">
                 {column}
               </th>
             ))}
@@ -39,14 +40,14 @@ function Table({ columns, rows }: { columns: string[]; rows: (string | number)[]
         </thead>
         <tbody>
           {rows.map((row) => (
-            <tr key={String(row[0])} className="border-b border-slate-200">
+            <tr key={String(row[0])}>
               {row.map((cell, index) =>
                 index === 0 ? (
-                  <th key={index} scope="row" className="py-2 pr-4 font-normal">
+                  <th key={index} scope="row">
                     {cell}
                   </th>
                 ) : (
-                  <td key={index} className="py-2 pr-4">
+                  <td key={index} className="tabular-nums">
                     {cell}
                   </td>
                 ),
@@ -90,11 +91,11 @@ export default function ModelReport() {
         <p className="mt-1">This report gives no accuracy, sensitivity or specificity, because there is nothing to measure them against.</p>
       </section>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <StatRow columns={3}>
         <StatTile label="Test records" value={test.rows} testId="rows" />
         <StatTile label={`Isolation Forest flagged (${pct(test.isolation_forest.rate)})`} value={test.isolation_forest.flagged} testId="if-flagged" />
         <StatTile label={`Rule-based flagged (${pct(test.rule_based.rate)})`} value={test.rule_based.flagged} testId="rule-flagged" />
-      </div>
+      </StatRow>
 
       <Section title="Where the methods agree">
         <Table

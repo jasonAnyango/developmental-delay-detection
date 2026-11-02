@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom'
 import AssessmentSummary from '../components/AssessmentSummary.tsx'
 import LoadError from '../components/LoadError.tsx'
+import StatusBadge from '../components/StatusBadge.tsx'
 import { DOMAINS } from '../domains.ts'
 import { flaggedInText, isFlagged } from '../flags.ts'
 import { formatDate, formatDateTime, zText } from '../format.ts'
@@ -8,7 +9,7 @@ import { useChild } from '../hooks/useChild.ts'
 
 function BackLink() {
   return (
-    <Link to="/children" className="w-fit text-sm text-brand-700 underline">
+    <Link to="/children" className="link w-fit text-sm">
       Back to children
     </Link>
   )
@@ -33,7 +34,7 @@ function ChildView({ id }: { id: number }) {
   const history = [...child.assessments].reverse()
 
   return (
-    <div className="flex max-w-3xl flex-col gap-6">
+    <div className="flex max-w-4xl flex-col gap-6">
       <BackLink />
       <div>
         <h1 className="text-2xl font-semibold">Child {child.child_id}</h1>
@@ -60,45 +61,37 @@ function ChildView({ id }: { id: number }) {
 
       <section className="flex flex-col gap-2">
         <h2 className="text-lg font-semibold">History</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
+        <div className="panel overflow-x-auto">
+          <table className="data-table">
             <thead>
-              <tr className="border-b border-slate-300">
-                <th scope="col" className="py-2 pr-4 font-medium">
-                  Date
-                </th>
-                <th scope="col" className="py-2 pr-4 font-medium">
-                  Age (months)
-                </th>
-                <th scope="col" className="py-2 pr-4 font-medium">
-                  Status
-                </th>
-                <th scope="col" className="py-2 pr-4 font-medium">
-                  Flagged in
-                </th>
+              <tr>
+                <th scope="col">Date</th>
+                <th scope="col">Age (months)</th>
+                <th scope="col">Status</th>
+                <th scope="col">Flagged in</th>
                 {DOMAINS.map(({ key, label }) => (
-                  <th key={key} scope="col" className="py-2 pr-4 font-medium">
+                  <th key={key} scope="col">
                     {label} z
                   </th>
                 ))}
-                <th scope="col" className="py-2 font-medium">
-                  Forest score
-                </th>
+                <th scope="col">Forest score</th>
               </tr>
             </thead>
             <tbody>
               {history.map((item) => (
-                <tr key={item.assessment_id} className="border-b border-slate-200" data-testid="history-row">
-                  <td className="py-2 pr-4">{formatDateTime(item.assessed_at)}</td>
-                  <td className="py-2 pr-4">{item.age_months}</td>
-                  <td className="py-2 pr-4">{isFlagged(item) ? 'Flagged' : 'Not flagged'}</td>
-                  <td className="py-2 pr-4">{flaggedInText(item)}</td>
+                <tr key={item.assessment_id} data-testid="history-row">
+                  <td className="whitespace-nowrap">{formatDateTime(item.assessed_at)}</td>
+                  <td className="tabular-nums">{item.age_months}</td>
+                  <td>
+                    <StatusBadge flagged={isFlagged(item)} />
+                  </td>
+                  <td>{flaggedInText(item)}</td>
                   {DOMAINS.map(({ key }) => (
-                    <td key={key} className="py-2 pr-4">
+                    <td key={key} className="tabular-nums">
                       {zText(item.z_scores[key])}
                     </td>
                   ))}
-                  <td className="py-2">{item.isolation_forest ? item.isolation_forest.score : '-'}</td>
+                  <td className="tabular-nums">{item.isolation_forest ? item.isolation_forest.score : '-'}</td>
                 </tr>
               ))}
             </tbody>
@@ -107,10 +100,7 @@ function ChildView({ id }: { id: number }) {
         <p className="text-xs text-slate-600">Newest first. Z-scores are compared with the reference group for the age at each assessment.</p>
       </section>
 
-      <Link
-        to={`/assess?child=${encodeURIComponent(child.child_id)}`}
-        className="w-fit rounded bg-brand-700 px-4 py-2 font-medium text-white hover:bg-brand-800"
-      >
+      <Link to={`/assess?child=${encodeURIComponent(child.child_id)}`} className="btn-primary w-fit">
         New assessment for this child
       </Link>
     </div>

@@ -1,5 +1,6 @@
 import { Bar, BarChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import ChartTable from './ChartTable.tsx'
+import { TOOLTIP } from './chartStyle.ts'
 
 type Props = {
   edges: number[]
@@ -24,22 +25,23 @@ export default function ScoreHistogram({ edges, counts, threshold }: Props) {
               dataKey="start"
               tickFormatter={(value: number) => value.toFixed(2)}
               interval={3}
-              tick={{ fontSize: 12, fill: '#475569' }}
-              axisLine={{ stroke: '#cbd5e1' }}
+              tick={{ fontSize: 12, fill: '#4b6068' }}
+              axisLine={{ stroke: '#d5dfe1' }}
               tickLine={false}
             />
-            <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: '#475569' }} axisLine={false} tickLine={false} width={32} />
+            <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: '#4b6068' }} axisLine={false} tickLine={false} width={32} />
             <Tooltip
-              cursor={{ fill: '#f1f5f9' }}
+              contentStyle={TOOLTIP}
+              cursor={{ fill: '#eaf0f1' }}
               labelFormatter={(_, payload) => `Score ${payload?.[0]?.payload?.label ?? ''}`}
               formatter={(value) => [`${value} records`, 'Records']}
             />
             {thresholdBin && (
               <ReferenceLine
                 x={thresholdBin.start}
-                stroke="#0f172a"
+                stroke="#12262b"
                 strokeDasharray="4 3"
-                label={{ value: `flag below ${threshold}`, position: 'top', fontSize: 12, fill: '#0f172a' }}
+                label={{ value: `flag below ${threshold}`, position: 'top', fontSize: 12, fill: '#12262b' }}
               />
             )}
             <Bar dataKey="count" fill="#0b86a0" radius={[4, 4, 0, 0]} isAnimationActive={false} />
