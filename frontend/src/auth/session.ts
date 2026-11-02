@@ -1,12 +1,12 @@
 import type { Doctor } from '../api/api.ts'
 
-const KEY = 'sophia.session'
+export const SESSION_KEY = 'sophia.session'
 
 export type Session = { token: string; doctor: Doctor; expiresAt: number }
 
 export function loadSession(): { session: Session | null; expired: boolean } {
   try {
-    const raw = localStorage.getItem(KEY)
+    const raw = localStorage.getItem(SESSION_KEY)
     if (!raw) return { session: null, expired: false }
     const stored = JSON.parse(raw) as Session
     const valid = typeof stored.token === 'string' && typeof stored.expiresAt === 'number' && stored.doctor
@@ -26,7 +26,7 @@ export function loadSession(): { session: Session | null; expired: boolean } {
 
 export function saveSession(session: Session) {
   try {
-    localStorage.setItem(KEY, JSON.stringify(session))
+    localStorage.setItem(SESSION_KEY, JSON.stringify(session))
   } catch {
     // storage unavailable: the session lasts until the page is closed
   }
@@ -34,7 +34,7 @@ export function saveSession(session: Session) {
 
 export function clearSession() {
   try {
-    localStorage.removeItem(KEY)
+    localStorage.removeItem(SESSION_KEY)
   } catch {
     // nothing to clear
   }
