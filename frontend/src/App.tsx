@@ -5,6 +5,7 @@ import Assess from './pages/Assess.tsx'
 import Dashboard from './pages/Dashboard.tsx'
 import Login from './pages/Login.tsx'
 import NotFound from './pages/NotFound.tsx'
+import ModelReport from './pages/ModelReport.tsx'
 import Register from './pages/Register.tsx'
 import Result from './pages/Result.tsx'
 import ChildDetail from './pages/ChildDetail.tsx'
@@ -20,6 +21,7 @@ export default function App() {
           <Route path="/children/:id" element={<ChildDetail />} />
           <Route path="/assess" element={<Assess />} />
           <Route path="/assess/result" element={<Result />} />
+          <Route path="/model" element={<ModelReport />} />
         </Route>
       </Route>
       <Route element={<GuestRoute />}>
