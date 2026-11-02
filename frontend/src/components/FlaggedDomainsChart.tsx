@@ -28,14 +28,14 @@ export default function FlaggedDomainsChart({ data }: { data: DomainCount[] }) {
               cursor={{ fill: '#f1f5f9' }}
               formatter={(value) => [`${value} ${value === 1 ? 'child' : 'children'}`, 'Flagged']}
             />
-            <Bar dataKey="count" fill="#1d4ed8" barSize={16} radius={[0, 4, 4, 0]} isAnimationActive={false}>
+            <Bar dataKey="count" fill="#0b86a0" barSize={16} radius={[0, 4, 4, 0]} isAnimationActive={false}>
               <LabelList dataKey="count" position="right" fontSize={12} fill="#0f172a" />
             </Bar>
           </BarChart>
         </ResponsiveContainer>
       </div>
       <details className="text-sm">
-        <summary className="cursor-pointer text-blue-700 underline">Show as table</summary>
+        <summary className="cursor-pointer text-brand-700 underline">Show as table</summary>
         <table className="mt-2 w-full max-w-sm text-left">
           <thead>
             <tr className="border-b border-slate-300">

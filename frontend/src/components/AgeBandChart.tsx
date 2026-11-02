@@ -14,7 +14,7 @@ export default function AgeBandChart({ data }: { data: AgeBandRow[] }) {
             <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: '#475569' }} axisLine={false} tickLine={false} width={32} />
             <Tooltip cursor={{ fill: '#f1f5f9' }} />
             <Legend verticalAlign="top" height={28} />
-            <Bar dataKey="forest" name="Isolation Forest" fill="#1d4ed8" radius={[4, 4, 0, 0]} isAnimationActive={false}>
+            <Bar dataKey="forest" name="Isolation Forest" fill="#0b86a0" radius={[4, 4, 0, 0]} isAnimationActive={false}>
               <LabelList dataKey="forest" position="top" fontSize={11} fill="#0f172a" />
             </Bar>
             <Bar dataKey="rules" name="Rule-based" fill="#c2410c" radius={[4, 4, 0, 0]} isAnimationActive={false}>

@@ -42,7 +42,7 @@ export default function ScoreHistogram({ edges, counts, threshold }: Props) {
                 label={{ value: `flag below ${threshold}`, position: 'top', fontSize: 12, fill: '#0f172a' }}
               />
             )}
-            <Bar dataKey="count" fill="#1d4ed8" radius={[4, 4, 0, 0]} isAnimationActive={false} />
+            <Bar dataKey="count" fill="#0b86a0" radius={[4, 4, 0, 0]} isAnimationActive={false} />
           </BarChart>
         </ResponsiveContainer>
       </div>

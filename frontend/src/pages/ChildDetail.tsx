@@ -8,7 +8,7 @@ import { useChild } from '../hooks/useChild.ts'
 
 function BackLink() {
   return (
-    <Link to="/children" className="w-fit text-sm text-blue-700 underline">
+    <Link to="/children" className="w-fit text-sm text-brand-700 underline">
       Back to children
     </Link>
   )
@@ -109,7 +109,7 @@ function ChildView({ id }: { id: number }) {
 
       <Link
         to={`/assess?child=${encodeURIComponent(child.child_id)}`}
-        className="w-fit rounded bg-blue-700 px-4 py-2 font-medium text-white hover:bg-blue-800"
+        className="w-fit rounded bg-brand-700 px-4 py-2 font-medium text-white hover:bg-brand-800"
       >
         New assessment for this child
       </Link>

@@ -29,9 +29,7 @@ export default function FormField({ id, label, value, onChange, error, type = 't
         onChange={(event) => onChange(event.target.value)}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy || undefined}
-        className={`rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 ${
-          error ? 'border-red-600' : 'border-slate-300'
-        }`}
+        className={`input ${error ? 'border-red-600' : ''}`}
       />
       {hint && (
         <p id={hintId} className="text-xs text-slate-500">

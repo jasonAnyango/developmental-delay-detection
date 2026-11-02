@@ -6,7 +6,7 @@ type Props = {
 export default function ChartTable({ columns, rows }: Props) {
   return (
     <details className="text-sm">
-      <summary className="cursor-pointer text-blue-700 underline">Show as table</summary>
+      <summary className="cursor-pointer text-brand-700 underline">Show as table</summary>
       <div className="overflow-x-auto">
         <table className="mt-2 w-full max-w-xl text-left">
           <thead>

@@ -34,7 +34,7 @@ export default function Result() {
         This is a screening result, not a diagnosis. Use it together with clinical judgement.
       </p>
 
-      <Link to="/assess" className="w-fit rounded bg-blue-700 px-4 py-2 font-medium text-white hover:bg-blue-800">
+      <Link to="/assess" className="w-fit rounded bg-brand-700 px-4 py-2 font-medium text-white hover:bg-brand-800">
         New assessment
       </Link>
     </div>

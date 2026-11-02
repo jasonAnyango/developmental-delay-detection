@@ -9,7 +9,7 @@ export default function LoadError({ errors, onRetry }: Props) {
       {errors.map((message) => (
         <p key={message}>{message}</p>
       ))}
-      <button onClick={onRetry} className="w-fit text-blue-700 underline">
+      <button onClick={onRetry} className="w-fit text-brand-700 underline">
         Try again
       </button>
     </div>

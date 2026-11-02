@@ -18,7 +18,7 @@ export default function Dashboard() {
       <div className="flex max-w-xl flex-col gap-3">
         <h1 className="text-2xl font-semibold">Dashboard</h1>
         <p className="text-slate-600">No children screened yet.</p>
-        <Link to="/assess" className="w-fit rounded bg-blue-700 px-4 py-2 font-medium text-white hover:bg-blue-800">
+        <Link to="/assess" className="w-fit rounded bg-brand-700 px-4 py-2 font-medium text-white hover:bg-brand-800">
           Start an assessment
         </Link>
       </div>

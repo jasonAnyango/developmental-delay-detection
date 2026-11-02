@@ -21,7 +21,7 @@ export default function Children() {
       <div className="flex max-w-xl flex-col gap-3">
         <h1 className="text-2xl font-semibold">Children</h1>
         <p className="text-slate-600">No children screened yet.</p>
-        <Link to="/assess" className="w-fit rounded bg-blue-700 px-4 py-2 font-medium text-white hover:bg-blue-800">
+        <Link to="/assess" className="w-fit rounded bg-brand-700 px-4 py-2 font-medium text-white hover:bg-brand-800">
           Start an assessment
         </Link>
       </div>
@@ -51,8 +51,8 @@ export default function Children() {
               aria-pressed={filter === tab.value}
               className={`rounded border px-3 py-1.5 text-sm ${
                 filter === tab.value
-                  ? 'border-blue-700 bg-blue-700 text-white'
-                  : 'border-slate-300 bg-white text-slate-800 hover:border-blue-700'
+                  ? 'border-brand-700 bg-brand-700 text-white'
+                  : 'border-slate-300 bg-white text-slate-800 hover:border-brand-700'
               }`}
             >
               {tab.label} ({tab.count})
@@ -65,7 +65,7 @@ export default function Children() {
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            className="rounded border border-slate-300 px-3 py-1.5 font-normal focus:outline-none focus:ring-2 focus:ring-blue-600"
+            className="rounded border border-slate-300 px-3 py-1.5 font-normal focus:outline-none focus:ring-2 focus:ring-brand-600"
           />
         </label>
       </div>
@@ -110,7 +110,7 @@ export default function Children() {
               {shown.map((child) => (
                 <tr key={child.id} className="border-b border-slate-200" data-testid="row">
                   <th scope="row" className="py-2 pr-4 font-medium">
-                    <Link to={`/children/${child.id}`} className="text-blue-700 underline">
+                    <Link to={`/children/${child.id}`} className="text-brand-700 underline">
                       {child.child_id}
                     </Link>
                   </th>

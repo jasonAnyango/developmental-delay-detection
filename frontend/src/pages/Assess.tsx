@@ -125,7 +125,7 @@ export default function Assess() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-fit rounded bg-blue-700 px-4 py-2 font-medium text-white hover:bg-blue-800 disabled:opacity-60"
+          className="w-fit rounded bg-brand-700 px-4 py-2 font-medium text-white hover:bg-brand-800 disabled:opacity-60"
         >
           {submitting ? 'Saving...' : 'Submit assessment'}
         </button>
