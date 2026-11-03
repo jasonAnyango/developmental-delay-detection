@@ -9,6 +9,7 @@ JSON_FILES = {
     'norms': 'norms.json',
     'bands': 'supported_bands.json',
     'items': 'item_domain_map.json',
+    'labels': 'item_labels.json',
     'info': 'model_info.json',
     'evaluation': 'evaluation_results.json',
 }
