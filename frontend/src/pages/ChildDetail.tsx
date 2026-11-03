@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom'
 import AssessmentSummary from '../components/AssessmentSummary.tsx'
 import LoadError from '../components/LoadError.tsx'
+import Loading from '../components/Loading.tsx'
 import StatusBadge from '../components/StatusBadge.tsx'
 import { DOMAINS } from '../domains.ts'
 import { flaggedInText, isFlagged } from '../flags.ts'
@@ -28,7 +29,7 @@ function ChildView({ id }: { id: number }) {
     )
   }
   if (errors.length > 0) return <LoadError errors={errors} onRetry={retry} />
-  if (child === null) return <p className="text-slate-600">Loading...</p>
+  if (child === null) return <Loading />
 
   const latest = child.assessments.at(-1)
   const history = [...child.assessments].reverse()

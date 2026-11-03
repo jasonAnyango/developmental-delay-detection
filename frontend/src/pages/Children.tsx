@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import LoadError from '../components/LoadError.tsx'
+import Loading from '../components/Loading.tsx'
 import StatusBadge from '../components/StatusBadge.tsx'
 import { flaggedInText, isFlagged } from '../flags.ts'
 import { formatDate } from '../format.ts'
@@ -14,7 +15,7 @@ export default function Children() {
   const [query, setQuery] = useState('')
 
   if (errors.length > 0) return <LoadError errors={errors} onRetry={retry} />
-  if (children === null) return <p className="text-slate-600">Loading...</p>
+  if (children === null) return <Loading />
 
   if (children.length === 0) {
     return (

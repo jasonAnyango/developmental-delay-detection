@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import AgeBandChart from '../components/AgeBandChart.tsx'
 import LoadError from '../components/LoadError.tsx'
+import Loading from '../components/Loading.tsx'
 import ScoreHistogram from '../components/ScoreHistogram.tsx'
 import StatRow from '../components/StatRow.tsx'
 import StatTile from '../components/StatTile.tsx'
@@ -64,7 +65,7 @@ export default function ModelReport() {
   const { evaluation, errors, retry } = useEvaluation()
 
   if (errors.length > 0) return <LoadError errors={errors} onRetry={retry} />
-  if (evaluation === null) return <p className="text-slate-600">Loading...</p>
+  if (evaluation === null) return <Loading />
 
   const { test_set: test, overlap, score_distribution: scores, fold_consistency: folds } = evaluation
   const similar = scores.ks_p_value >= 0.05
@@ -81,7 +82,7 @@ export default function ModelReport() {
         </p>
       </div>
 
-      <section className="rounded border border-amber-400 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+      <section className="rounded-lg border border-l-4 border-amber-300 border-l-amber-600 bg-amber-50 px-4 py-3 text-sm text-amber-950">
         <h2 className="font-semibold">Read this first</h2>
         <ul className="mt-1 list-disc pl-5">
           {evaluation.notes.map((note) => (
@@ -120,11 +121,13 @@ export default function ModelReport() {
           Each test record gets a score. Records with a score below {scores.flag_threshold} are flagged: the bars left
           of the dashed line.
         </p>
-        <ScoreHistogram
-          edges={scores.test_histogram.edges}
-          counts={scores.test_histogram.counts}
-          threshold={scores.flag_threshold}
-        />
+        <div className="panel p-4">
+          <ScoreHistogram
+            edges={scores.test_histogram.edges}
+            counts={scores.test_histogram.counts}
+            threshold={scores.flag_threshold}
+          />
+        </div>
         <Table
           columns={['Scores', 'Mean', 'Spread (std)', 'Lowest', 'Median', 'Highest']}
           rows={(['train', 'test'] as const).map((name) => [
@@ -145,7 +148,9 @@ export default function ModelReport() {
 
       <Section title="Flags by age group">
         <p className="text-sm text-slate-600">Test records flagged by each method in each age group (months).</p>
-        <AgeBandChart data={ageRows} />
+        <div className="panel p-4">
+          <AgeBandChart data={ageRows} />
+        </div>
       </Section>
 
       <Section title="Rule-based flags by domain">

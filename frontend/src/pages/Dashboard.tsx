@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import FlaggedDomainsChart from '../components/FlaggedDomainsChart.tsx'
 import LoadError from '../components/LoadError.tsx'
+import Loading from '../components/Loading.tsx'
 import StatRow from '../components/StatRow.tsx'
 import StatTile from '../components/StatTile.tsx'
 import { DOMAINS } from '../domains.ts'
@@ -12,7 +13,7 @@ export default function Dashboard() {
 
   if (errors.length > 0) return <LoadError errors={errors} onRetry={retry} />
 
-  if (children === null) return <p className="text-slate-600">Loading...</p>
+  if (children === null) return <Loading />
 
   if (children.length === 0) {
     return (

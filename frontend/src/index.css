@@ -33,6 +33,10 @@
     -webkit-font-smoothing: antialiased;
   }
 
+  [tabindex='-1']:focus {
+    outline: none;
+  }
+
   :focus-visible {
     outline: 2px solid var(--color-brand-600);
     outline-offset: 2px;
