@@ -55,6 +55,7 @@ export function validateRegistration(values: {
 
 export const MAX_CHILD_ID_LENGTH = 64
 export const MAX_AGE_MONTHS = 36
+export const MIN_ITEMS_TO_SCORE = 3
 
 const WHOLE_NUMBER = /^\d{1,3}$/
 const DECIMAL_NUMBER = /^\d+(\.\d+)?$/
@@ -65,23 +66,32 @@ export type AssessmentValues = {
   counts: Record<DomainName, { achieved: string; assessed: string }>
 }
 
-export function validateAssessment(values: AssessmentValues) {
+export function validateAge(text: string) {
+  const age = text.trim()
+  if (age === '') return { error: "Enter the child's age in months", value: 0 }
+  if (!DECIMAL_NUMBER.test(age)) return { error: 'Enter the age as a number, for example 6.5', value: 0 }
+  const value = Number(age)
+  if (value <= 0 || value > MAX_AGE_MONTHS)
+    return { error: `Age must be between 0 and ${MAX_AGE_MONTHS} months`, value: 0 }
+  return { error: '', value }
+}
+
+export function validateChildAndAge(childIdText: string, ageText: string) {
   const errors: FieldErrors = {}
 
-  const childId = values.child_id.trim()
+  const childId = childIdText.trim()
   if (childId === '') errors.child_id = 'Enter the child ID'
   else if (childId.length > MAX_CHILD_ID_LENGTH)
     errors.child_id = `Child ID must be at most ${MAX_CHILD_ID_LENGTH} characters`
 
-  const age = values.age_months.trim()
-  let ageValue = 0
-  if (age === '') errors.age_months = "Enter the child's age in months"
-  else if (!DECIMAL_NUMBER.test(age)) errors.age_months = 'Enter the age as a number, for example 6.5'
-  else {
-    ageValue = Number(age)
-    if (ageValue <= 0 || ageValue > MAX_AGE_MONTHS)
-      errors.age_months = `Age must be between 0 and ${MAX_AGE_MONTHS} months`
-  }
+  const age = validateAge(ageText)
+  if (age.error) errors.age_months = age.error
+
+  return { errors, childId, ageValue: age.value }
+}
+
+export function validateAssessment(values: AssessmentValues) {
+  const { errors, childId, ageValue } = validateChildAndAge(values.child_id, values.age_months)
 
   const domains: Partial<Record<DomainName, DomainCounts>> = {}
   let domainFieldError = false
