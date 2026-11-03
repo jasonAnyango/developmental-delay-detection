@@ -8,7 +8,7 @@ export default function Result() {
   if (!result) return <Navigate to="/assess" replace />
 
   return (
-    <div className="flex max-w-2xl flex-col gap-5">
+    <div className="flex max-w-3xl flex-col gap-6">
       <div>
         <h1 className="text-2xl font-semibold">Assessment result</h1>
         <p className="text-sm text-slate-600">
@@ -20,9 +20,9 @@ export default function Result() {
       <AssessmentSummary assessment={result} />
 
       {result.warnings.length > 0 && (
-        <section className="rounded border border-slate-300 bg-slate-50 px-3 py-2 text-sm">
+        <section className="panel p-4 text-sm">
           <h2 className="font-medium">Notes</h2>
-          <ul className="list-disc pl-5">
+          <ul className="mt-1 list-disc pl-5">
             {result.warnings.map((warning) => (
               <li key={warning}>{warning}</li>
             ))}
@@ -30,11 +30,11 @@ export default function Result() {
         </section>
       )}
 
-      <p className="text-xs text-slate-600">
+      <p className="max-w-prose text-sm text-slate-600">
         This is a screening result, not a diagnosis. Use it together with clinical judgement.
       </p>
 
-      <Link to="/assess" className="w-fit rounded bg-blue-700 px-4 py-2 font-medium text-white hover:bg-blue-800">
+      <Link to="/assess" className="btn-primary w-fit">
         New assessment
       </Link>
     </div>

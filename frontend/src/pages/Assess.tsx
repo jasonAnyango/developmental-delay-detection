@@ -55,38 +55,41 @@ export default function Assess() {
   }
 
   return (
-    <div className="flex max-w-2xl flex-col gap-4">
+    <div className="flex max-w-2xl flex-col gap-5">
       <h1 className="text-2xl font-semibold">New assessment</h1>
       {serverErrors.length > 0 && (
-        <div role="alert" className="rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-900">
+        <div role="alert" className="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-900">
           {serverErrors.map((message) => (
             <p key={message}>{message}</p>
           ))}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
-        <FormField
-          id="child_id"
-          label="Child ID"
-          hint="A code you use for the child. Use the same ID to add a later assessment for the same child."
-          value={childId}
-          onChange={setChildId}
-          error={fieldErrors.child_id}
-        />
-        <FormField
-          id="age_months"
-          label="Age in months"
-          inputMode="decimal"
-          hint={SUPPORTED_AGES}
-          value={age}
-          onChange={setAge}
-          error={fieldErrors.age_months}
-        />
-
+      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
+        <div className="panel grid items-start gap-5 p-5 sm:grid-cols-2">
+          <FormField
+            id="child_id"
+            label="Child ID"
+            hint="A code you use for the child. Use the same ID to add a later assessment for the same child."
+            value={childId}
+            onChange={setChildId}
+            error={fieldErrors.child_id}
+          />
+        </div>
+        <div className="panel grid items-start gap-5 p-5 sm:grid-cols-2">
+          <FormField
+            id="age_months"
+            label="Age in months"
+            inputMode="decimal"
+            hint={SUPPORTED_AGES}
+            value={age}
+            onChange={setAge}
+            error={fieldErrors.age_months}
+          />
+        </div>
         <div className="flex flex-col gap-3">
           <div>
-            <h2 className="font-medium">Milestones by domain</h2>
+            <h2 className="text-lg font-semibold">Milestones by domain</h2>
             <p className="text-sm text-slate-600">
               For each domain, enter how many milestones were achieved out of how many were assessed. Leave a domain
               empty if it was not assessed. A domain with fewer than 3 assessed milestones is not scored.
@@ -99,8 +102,8 @@ export default function Assess() {
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             {DOMAINS.map(({ key, label }) => (
-              <fieldset key={key} className="flex flex-col gap-3 rounded border border-slate-200 p-3">
-                <legend className="px-1 text-sm font-medium">{label}</legend>
+              <fieldset key={key} className="panel grid grid-cols-2 items-start gap-3 p-4">
+                <legend className="px-1 font-medium text-brand-800">{label}</legend>
                 <FormField
                   id={`${key}_achieved`}
                   label={`${label} achieved`}
@@ -125,7 +128,7 @@ export default function Assess() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-fit rounded bg-blue-700 px-4 py-2 font-medium text-white hover:bg-blue-800 disabled:opacity-60"
+          className="btn-primary w-fit"
         >
           {submitting ? 'Saving...' : 'Submit assessment'}
         </button>

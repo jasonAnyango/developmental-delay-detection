@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import LoadError from '../components/LoadError.tsx'
+import Loading from '../components/Loading.tsx'
+import StatusBadge from '../components/StatusBadge.tsx'
 import { flaggedInText, isFlagged } from '../flags.ts'
 import { formatDate } from '../format.ts'
 import { useChildren } from '../hooks/useChildren.ts'
 
 type Filter = 'flagged' | 'all'
-
 
 export default function Children() {
   const { children, errors, retry } = useChildren()
@@ -14,16 +15,18 @@ export default function Children() {
   const [query, setQuery] = useState('')
 
   if (errors.length > 0) return <LoadError errors={errors} onRetry={retry} />
-  if (children === null) return <p className="text-slate-600">Loading...</p>
+  if (children === null) return <Loading />
 
   if (children.length === 0) {
     return (
       <div className="flex max-w-xl flex-col gap-3">
         <h1 className="text-2xl font-semibold">Children</h1>
-        <p className="text-slate-600">No children screened yet.</p>
-        <Link to="/assess" className="w-fit rounded bg-blue-700 px-4 py-2 font-medium text-white hover:bg-blue-800">
-          Start an assessment
-        </Link>
+        <div className="panel flex flex-col items-start gap-3 p-6">
+          <p className="text-slate-700">No children screened yet.</p>
+          <Link to="/assess" className="btn-primary">
+            Start an assessment
+          </Link>
+        </div>
       </div>
     )
   }
@@ -49,10 +52,10 @@ export default function Children() {
               key={tab.value}
               onClick={() => setFilter(tab.value)}
               aria-pressed={filter === tab.value}
-              className={`rounded border px-3 py-1.5 text-sm ${
+              className={`rounded-md border px-3 py-1.5 text-sm font-medium ${
                 filter === tab.value
-                  ? 'border-blue-700 bg-blue-700 text-white'
-                  : 'border-slate-300 bg-white text-slate-800 hover:border-blue-700'
+                  ? 'border-brand-700 bg-brand-700 text-white'
+                  : 'border-slate-300 bg-white text-slate-800 hover:border-brand-700'
               }`}
             >
               {tab.label} ({tab.count})
@@ -65,7 +68,7 @@ export default function Children() {
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            className="rounded border border-slate-300 px-3 py-1.5 font-normal focus:outline-none focus:ring-2 focus:ring-blue-600"
+            className="input w-full max-w-xs font-normal"
           />
         </label>
       </div>
@@ -82,43 +85,31 @@ export default function Children() {
             : 'No flagged children. Switch to All children to see everyone.'}
         </p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
+        <div className="panel overflow-x-auto">
+          <table className="data-table">
             <thead>
-              <tr className="border-b border-slate-300">
-                <th scope="col" className="py-2 pr-4 font-medium">
-                  Child ID
-                </th>
-                <th scope="col" className="py-2 pr-4 font-medium">
-                  Status
-                </th>
-                <th scope="col" className="py-2 pr-4 font-medium">
-                  Flagged in
-                </th>
-                <th scope="col" className="py-2 pr-4 font-medium">
-                  Age (months)
-                </th>
-                <th scope="col" className="py-2 pr-4 font-medium">
-                  Last assessed
-                </th>
-                <th scope="col" className="py-2 font-medium">
-                  Assessments
-                </th>
+              <tr>
+                <th scope="col">Child ID</th>
+                <th scope="col">Status</th>
+                <th scope="col">Flagged in</th>
+                <th scope="col">Age (months)</th>
+                <th scope="col">Last assessed</th>
+                <th scope="col">Assessments</th>
               </tr>
             </thead>
             <tbody>
               {shown.map((child) => (
-                <tr key={child.id} className="border-b border-slate-200" data-testid="row">
-                  <th scope="row" className="py-2 pr-4 font-medium">
-                    <Link to={`/children/${child.id}`} className="text-blue-700 underline">
+                <tr key={child.id} data-testid="row">
+                  <th scope="row">
+                    <Link to={`/children/${child.id}`} className="link">
                       {child.child_id}
                     </Link>
                   </th>
-                  <td className="py-2 pr-4">{child.latest ? (isFlagged(child.latest) ? 'Flagged' : 'Not flagged') : '-'}</td>
-                  <td className="py-2 pr-4">{child.latest ? flaggedInText(child.latest) : '-'}</td>
-                  <td className="py-2 pr-4">{child.latest?.age_months ?? '-'}</td>
-                  <td className="py-2 pr-4">{child.latest ? formatDate(child.latest.assessed_at) : '-'}</td>
-                  <td className="py-2">{child.assessment_count}</td>
+                  <td>{child.latest ? <StatusBadge flagged={isFlagged(child.latest)} /> : '-'}</td>
+                  <td>{child.latest ? flaggedInText(child.latest) : '-'}</td>
+                  <td className="tabular-nums">{child.latest?.age_months ?? '-'}</td>
+                  <td>{child.latest ? formatDate(child.latest.assessed_at) : '-'}</td>
+                  <td className="tabular-nums">{child.assessment_count}</td>
                 </tr>
               ))}
             </tbody>

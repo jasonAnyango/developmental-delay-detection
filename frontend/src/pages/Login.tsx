@@ -74,14 +74,14 @@ export default function Login() {
         <button
           type="submit"
           disabled={submitting}
-          className="rounded bg-blue-700 px-4 py-2 font-medium text-white hover:bg-blue-800 disabled:opacity-60"
+          className="btn-primary"
         >
           {submitting ? 'Signing in...' : 'Sign in'}
         </button>
       </form>
       <p className="text-sm text-slate-600">
         No account yet?{' '}
-        <Link to="/register" className="text-blue-700 underline">
+        <Link to="/register" className="link">
           Create one
         </Link>
       </p>

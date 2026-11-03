@@ -1,0 +1,1 @@
+export const TOOLTIP = { border: '1px solid #d5dfe1', borderRadius: 8, fontSize: 13 }
