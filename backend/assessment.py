@@ -1,3 +1,4 @@
+from checklist import domains_from_items
 from detection import score_with_models
 from scoring import MIN_ITEMS, prepare_scores
 from storage import save_assessment
@@ -21,6 +22,12 @@ def build_warnings(clean, result):
 
 
 def assess_record(data, artifacts, doctor=None):
+    if isinstance(data, dict) and 'items' in data:
+        data, errors, status = domains_from_items(data, artifacts)
+        if errors:
+            return None, errors, status
+
+    clean, errors = validate_input(data)
     clean, errors = validate_input(data)
     if errors:
         return None, errors, 400

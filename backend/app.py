@@ -10,6 +10,7 @@ from model_store import artifacts
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from auth import auth
+from checklist import build_checklist
 from children import children
 
 import models  # noqa: F401
@@ -50,6 +51,14 @@ def health():
 @login_required
 def evaluation():
     return jsonify(artifacts['evaluation'])
+
+@app.route('/api/checklist')
+@login_required
+def checklist():
+    payload, errors, status = build_checklist(request.args.get('age_months'), artifacts)
+    if errors:
+        return jsonify({'errors': errors}), status
+    return jsonify(payload)
 
 SAVE_ERROR = 'The assessment could not be saved'
 

@@ -14,7 +14,12 @@ export type DomainCounts = { achieved: number; assessed: number }
 export type ScoreInput = {
   child_id: string
   age_months: number
-  domains: Partial<Record<DomainName, DomainCounts>>
+} & ({ domains: Partial<Record<DomainName, DomainCounts>> } | { items: Record<string, boolean> })
+export type ChecklistItem = { id: string; label: string }
+export type Checklist = {
+  age_months: number
+  age_band: [number, number]
+  domains: { domain: DomainName; items: ChecklistItem[] }[]
 }
 export type ScoreResult = {
   assessment_id: number
@@ -99,5 +104,6 @@ export const api = {
   children: () => request<ChildrenResponse>('/children'),
   evaluation: () => request<Evaluation>('/evaluation'),
   child: (id: number) => request<ChildHistory>(`/children/${id}`),
+  checklist: (age: number) => request<Checklist>(`/checklist?age_months=${encodeURIComponent(age)}`),
   score: (input: ScoreInput) => request<ScoreResult>('/score', { method: 'POST', body: input }),
 }
