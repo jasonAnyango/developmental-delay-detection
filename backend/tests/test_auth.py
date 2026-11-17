@@ -8,7 +8,7 @@ URL = '/api/auth/register'
 
 
 def new_doctor(**changes):
-    data = {'email': 'dr.a@example.com', 'password': 'longenough1', 'full_name': 'Dr Amina Otieno'}
+    data = {'email': 'dr.a@example.com', 'password': 'longenough1', 'full_name': 'Dr Amina Otieno', 'invite_code': 'test-invite-code'}
     data.update(changes)
     return data
 
@@ -90,14 +90,14 @@ def test_invalid_fields_give_clear_errors(db_client, change, message):
 
 
 def test_all_errors_are_reported_together(db_client):
-    response = db_client.post(URL, json={'email': 'x', 'password': 'a'})
+    response = db_client.post(URL, json={'email': 'x', 'password': 'a', 'invite_code': 'test-invite-code'})
     assert len(response.get_json()['errors']) == 3
 
 
 def test_invalid_json_body(db_client):
     response = db_client.post(URL, data='not json', content_type='application/json')
-    assert response.status_code == 400
-    assert response.get_json()['errors'] == ['Request body must be a JSON object']
+    assert response.status_code == 403
+    assert response.get_json()['errors'] == ['A valid invite code is required to register']
 
 
 def test_register_rejects_get(db_client):
@@ -207,3 +207,33 @@ def test_failed_login_gives_no_token(db_client):
     register_doctor(db_client)
     body = db_client.post(LOGIN, json={'email': 'dr.a@example.com', 'password': 'wrongpassword'}).get_json()
     assert 'token' not in body
+
+@pytest.mark.parametrize('code', [None, '', 'wrong-code', 123])
+def test_register_needs_the_invite_code(db_client, code):
+    response = db_client.post(URL, json=new_doctor(invite_code=code))
+    assert response.status_code == 403
+    assert response.get_json()['errors'] == ['A valid invite code is required to register']
+    assert Doctor.query.count() == 0
+
+
+def test_register_without_invite_field_is_refused(db_client):
+    data = new_doctor()
+    del data['invite_code']
+    assert db_client.post(URL, json=data).status_code == 403
+
+
+def test_registration_is_closed_when_no_invite_code_is_set(db_client):
+    from app import app
+
+    with patch.dict(app.config, {'INVITE_CODE': ''}):
+        assert db_client.post(URL, json=new_doctor(invite_code='')).status_code == 403
+
+
+def test_invite_code_is_checked_before_other_fields(db_client):
+    response = db_client.post(URL, json={'invite_code': 'wrong-code'})
+    assert response.status_code == 403
+
+
+def test_invite_code_ignores_surrounding_spaces(db_client):
+    response = db_client.post(URL, json=new_doctor(invite_code='  test-invite-code '))
+    assert response.status_code == 201

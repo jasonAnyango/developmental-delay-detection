@@ -1,0 +1,800 @@
+diff --git a/.dockerignore b/.dockerignore
+new file mode 100644
+index 0000000..55e344b
+--- /dev/null
++++ b/.dockerignore
+@@ -0,0 +1,8 @@
++**/node_modules
++**/__pycache__
++**/.pytest_cache
++**/.venv
++**/venv
++**/.env
++frontend/dist
++.git
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+new file mode 100644
+index 0000000..e653615
+--- /dev/null
++++ b/.github/workflows/ci.yml
+@@ -0,0 +1,53 @@
++name: CI
++
++on:
++  push:
++    branches: [main]
++  pull_request:
++
++jobs:
++  backend:
++    runs-on: ubuntu-latest
++    services:
++      postgres:
++        image: postgres:15
++        env:
++          POSTGRES_PASSWORD: password
++          POSTGRES_DB: sophia_test
++        ports:
++          - 5432:5432
++        options: >-
++          --health-cmd "pg_isready -U postgres"
++          --health-interval 5s
++          --health-timeout 5s
++          --health-retries 10
++    env:
++      TEST_DATABASE_URL: postgresql+psycopg2://postgres:password@localhost:5432/sophia_test
++    defaults:
++      run:
++        working-directory: backend
++    steps:
++      - uses: actions/checkout@v4
++      - uses: actions/setup-python@v5
++        with:
++          python-version: '3.12'
++          cache: pip
++          cache-dependency-path: backend/requirements-dev.txt
++      - run: pip install -r requirements-dev.txt
++      - run: python -m pytest -q
++
++  frontend:
++    runs-on: ubuntu-latest
++    defaults:
++      run:
++        working-directory: frontend
++    steps:
++      - uses: actions/checkout@v4
++      - uses: actions/setup-node@v4
++        with:
++          node-version: 22
++          cache: npm
++          cache-dependency-path: frontend/package-lock.json
++      - run: npm ci
++      - run: npm run lint
++      - run: npm run build
+diff --git a/Dockerfile b/Dockerfile
+new file mode 100644
+index 0000000..447bd41
+--- /dev/null
++++ b/Dockerfile
+@@ -0,0 +1,17 @@
++FROM node:22-slim AS frontend
++WORKDIR /app/frontend
++COPY frontend/package.json frontend/package-lock.json ./
++RUN npm ci
++COPY frontend/ ./
++ENV VITE_API_URL=/api
++RUN npm run build
++
++FROM python:3.12-slim
++WORKDIR /app/backend
++COPY backend/requirements.txt ./
++RUN pip install --no-cache-dir -r requirements.txt
++COPY backend/ ./
++COPY --from=frontend /app/frontend/dist /app/frontend/dist
++ENV FRONTEND_DIR=/app/frontend/dist FLASK_APP=app.py
++EXPOSE 10000
++CMD ["sh", "-c", "flask db upgrade && gunicorn --bind 0.0.0.0:${PORT:-10000} --workers 1 --threads 4 --timeout 120 app:app"]
+diff --git a/README.md b/README.md
+index 7798a99..8e11ce3 100644
+--- a/README.md
++++ b/README.md
+@@ -1,25 +1,58 @@
+-# Developmental Delay Detection
++# SOPHIA: developmental delay screening support
+ 
+-Anomaly detection system for identifying possible developmental delays in children aged 0-3, built on the GCDG-ZAF dataset.
++A web tool for clinicians. The clinician enters a child's age and the milestones the child has reached, and the system compares each of four domains (cognitive, motor, language, social-emotional) with a reference group of the same age and flags unusual patterns. It supports screening and does not diagnose.
+ 
+-## Approach
++## Method
+ 
+-- Isolation Forest is the primary model.
+-- A rule-based model (any domain score below -2 SD) is the baseline.
+-- Missing domain scores are infilled with regression on Social-Emotional scores.
++1. Milestone items from the GCDG South Africa data (Bayley, Griffiths and Vineland items) are grouped into four domains. A domain score is the share of answered items passed, kept only when at least three items were answered.
++2. Age-band norms (mean and standard deviation per domain) are computed from the training set only, and each score becomes a z-score.
++3. Two methods flag a record: a rule (any domain more than 2 standard deviations below the age band) and an Isolation Forest on the four z-scores. The forest scores complete records only.
++4. Children are split by child, 80/20, before any statistic is computed.
++
++On the held-out test set (516 complete records) the forest flags 27 and the rule flags 71, and every forest flag is also a rule flag. No clinician labels exist, so accuracy, sensitivity and specificity against a diagnosis cannot be reported. The model report screen shows what was measured.
++
++## Limits
++
++- The reference group is South African research cohorts, not Kenyan children.
++- Supported ages are 4.1 to 8.3, 12.0 to 16.0 and 22.5 to 29.3 months. Other ages are rejected.
++- Checklist labels come from research instruments and are not a clinical form.
++- Not clinically validated.
+ 
+ ## Structure
+ 
+-- notebooks/ - model training and evaluation (train.ipynb)
+-- backend/ - Flask API
+-- frontend/ - React dashboard
+-- docs/ - proposal and diagrams
+-- data/ and models/ - local only, not tracked
++- notebooks/ model training and evaluation
++- backend/ Flask API, PostgreSQL models, migrations, tests
++- frontend/ React, TypeScript, Tailwind
++- Dockerfile, render.yaml container build and Render settings
++- data/ not tracked (dataset is not included)
++
++## Run locally
++
++Backend (Python 3.12, PostgreSQL 15):
++
++    cd backend
++    pip install -r requirements-dev.txt
++    cp .env.example .env     # set DATABASE_URL, SECRET_KEY, INVITE_CODE
++    flask db upgrade
++    flask run
++
++Generate a secret with `python -c "import secrets; print(secrets.token_hex(32))"`.
++
++Frontend (Node 20.19 or later):
++
++    cd frontend
++    npm ci
++    npm run dev
++
++## Tests
++
++    cd backend && python -m pytest        # needs TEST_DATABASE_URL
++    cd frontend && npm run lint && npm run build
+ 
+-## Stack
++## Accounts
+ 
+-Python, scikit-learn, Flask, React, PostgreSQL
++Registration needs the invite code set in `INVITE_CODE`. If it is empty, registration is closed.
+ 
+-## Data
++## Deploy
+ 
+-The dataset contains child developmental records and is not included in this repository.
++The Dockerfile builds the frontend and serves it with the API from one container. See render.yaml.
+diff --git a/backend/.env.example b/backend/.env.example
+index dad5ed9..4583fd2 100644
+--- a/backend/.env.example
++++ b/backend/.env.example
+@@ -2,4 +2,5 @@ FRONTEND_ORIGIN=http://localhost:5173
+ DATABASE_URL=postgresql+psycopg2://postgres:password@localhost:5432/sophia
+ TEST_DATABASE_URL=postgresql+psycopg2://postgres:password@localhost:5432/sophia_test
+ SUPABASE_CONNECTION_STRING=
+-SECRET_KEY=
+\ No newline at end of file
++SECRET_KEY=
++INVITE_CODE=
+diff --git a/backend/app.py b/backend/app.py
+index bdc575e..6fb1b86 100644
+--- a/backend/app.py
++++ b/backend/app.py
+@@ -4,7 +4,7 @@ from assessment import assess_batch, assess_record
+ from config import BASE_DIR, Config
+ from decorators import login_required
+ from extensions import db, migrate
+-from flask import Flask, g, jsonify, request
++from flask import Flask, g, jsonify, request, send_from_directory
+ from flask_cors import CORS
+ from model_store import artifacts
+ from sqlalchemy import text
+@@ -92,5 +92,16 @@ def score_batch():
+         return jsonify({'errors': errors}), 400
+     return jsonify(payload)
+ 
++if Config.FRONTEND_DIR:
++    @app.route('/', defaults={'path': ''})
++    @app.route('/<path:path>')
++    def frontend(path):
++        if path.startswith('api/'):
++            return not_found(None)
++        if path and os.path.isfile(os.path.join(Config.FRONTEND_DIR, path)):
++            return send_from_directory(Config.FRONTEND_DIR, path)
++        return send_from_directory(Config.FRONTEND_DIR, 'index.html')
++
++
+ if __name__ == '__main__':
+     app.run(debug=True)
+\ No newline at end of file
+diff --git a/backend/auth.py b/backend/auth.py
+index feb11ce..e6afb5b 100644
+--- a/backend/auth.py
++++ b/backend/auth.py
+@@ -1,3 +1,4 @@
++import hmac
+ import re
+ 
+ from flask import Blueprint, current_app, jsonify, request
+@@ -15,6 +16,14 @@ MAX_PASSWORD_LENGTH = 128
+ 
+ DUMMY_HASH = hash_password('not-a-real-password')
+ BAD_LOGIN = 'Invalid email or password'
++BAD_INVITE = 'A valid invite code is required to register'
++
++
++def invite_code_ok(given):
++    expected = current_app.config['INVITE_CODE']
++    if not expected or not isinstance(given, str):
++        return False
++    return hmac.compare_digest(given.strip().encode(), expected.encode())
+ 
+ 
+ def validate_registration(data):
+@@ -53,7 +62,11 @@ def validate_registration(data):
+ 
+ @auth.route('/register', methods=['POST'])
+ def register():
+-    clean, errors = validate_registration(request.get_json(silent=True))
++    data = request.get_json(silent=True)
++    if not invite_code_ok(data.get('invite_code') if isinstance(data, dict) else None):
++        return jsonify({'errors': [BAD_INVITE]}), 403
++
++    clean, errors = validate_registration(data)
+     if errors:
+         return jsonify({'errors': errors}), 400
+ 
+diff --git a/backend/config.py b/backend/config.py
+index 5f0848f..cc7655f 100644
+--- a/backend/config.py
++++ b/backend/config.py
+@@ -35,6 +35,8 @@ class Config:
+     SQLALCHEMY_DATABASE_URI = DATABASE_URL
+     SECRET_KEY = SECRET_KEY
+     TOKEN_HOURS = int(os.getenv('TOKEN_HOURS', '8'))
++    INVITE_CODE = os.getenv('INVITE_CODE', '')
++    FRONTEND_DIR = os.getenv('FRONTEND_DIR', '')
+     SQLALCHEMY_TRACK_MODIFICATIONS = False
+     if ':6543/' in DATABASE_URL:
+         SQLALCHEMY_ENGINE_OPTIONS = {'poolclass': NullPool}
+diff --git a/backend/conftest.py b/backend/conftest.py
+index 268788d..4f1b29e 100644
+--- a/backend/conftest.py
++++ b/backend/conftest.py
+@@ -7,6 +7,7 @@ load_dotenv()
+ default_url = 'postgresql+psycopg2://postgres:password@localhost:5432/sophia_test'
+ os.environ['DATABASE_URL'] = os.getenv('TEST_DATABASE_URL', default_url)
+ os.environ['SECRET_KEY'] = 'test-secret-key-' + 'x' * 60
++os.environ['INVITE_CODE'] = 'test-invite-code'
+ 
+ 
+ @pytest.fixture
+diff --git a/backend/requirements.txt b/backend/requirements.txt
+index dfd5342..34a2837 100644
+--- a/backend/requirements.txt
++++ b/backend/requirements.txt
+@@ -9,4 +9,5 @@ python-dotenv==1.2.4
+ pyjwt==2.15.1
+ scikit-learn==1.6.1
+ numpy==2.1.3
+-joblib==1.6.0
+\ No newline at end of file
++joblib==1.6.0
++gunicorn==23.0.0
+diff --git a/backend/tests/test_auth.py b/backend/tests/test_auth.py
+index f5a539d..073205d 100644
+--- a/backend/tests/test_auth.py
++++ b/backend/tests/test_auth.py
+@@ -8,7 +8,7 @@ URL = '/api/auth/register'
+ 
+ 
+ def new_doctor(**changes):
+-    data = {'email': 'dr.a@example.com', 'password': 'longenough1', 'full_name': 'Dr Amina Otieno'}
++    data = {'email': 'dr.a@example.com', 'password': 'longenough1', 'full_name': 'Dr Amina Otieno', 'invite_code': 'test-invite-code'}
+     data.update(changes)
+     return data
+ 
+@@ -90,14 +90,14 @@ def test_invalid_fields_give_clear_errors(db_client, change, message):
+ 
+ 
+ def test_all_errors_are_reported_together(db_client):
+-    response = db_client.post(URL, json={'email': 'x', 'password': 'a'})
++    response = db_client.post(URL, json={'email': 'x', 'password': 'a', 'invite_code': 'test-invite-code'})
+     assert len(response.get_json()['errors']) == 3
+ 
+ 
+ def test_invalid_json_body(db_client):
+     response = db_client.post(URL, data='not json', content_type='application/json')
+-    assert response.status_code == 400
+-    assert response.get_json()['errors'] == ['Request body must be a JSON object']
++    assert response.status_code == 403
++    assert response.get_json()['errors'] == ['A valid invite code is required to register']
+ 
+ 
+ def test_register_rejects_get(db_client):
+@@ -206,4 +206,34 @@ def test_login_token_belongs_to_the_doctor(db_client):
+ def test_failed_login_gives_no_token(db_client):
+     register_doctor(db_client)
+     body = db_client.post(LOGIN, json={'email': 'dr.a@example.com', 'password': 'wrongpassword'}).get_json()
+-    assert 'token' not in body
+\ No newline at end of file
++    assert 'token' not in body
++
++@pytest.mark.parametrize('code', [None, '', 'wrong-code', 123])
++def test_register_needs_the_invite_code(db_client, code):
++    response = db_client.post(URL, json=new_doctor(invite_code=code))
++    assert response.status_code == 403
++    assert response.get_json()['errors'] == ['A valid invite code is required to register']
++    assert Doctor.query.count() == 0
++
++
++def test_register_without_invite_field_is_refused(db_client):
++    data = new_doctor()
++    del data['invite_code']
++    assert db_client.post(URL, json=data).status_code == 403
++
++
++def test_registration_is_closed_when_no_invite_code_is_set(db_client):
++    from app import app
++
++    with patch.dict(app.config, {'INVITE_CODE': ''}):
++        assert db_client.post(URL, json=new_doctor(invite_code='')).status_code == 403
++
++
++def test_invite_code_is_checked_before_other_fields(db_client):
++    response = db_client.post(URL, json={'invite_code': 'wrong-code'})
++    assert response.status_code == 403
++
++
++def test_invite_code_ignores_surrounding_spaces(db_client):
++    response = db_client.post(URL, json=new_doctor(invite_code='  test-invite-code '))
++    assert response.status_code == 201
+diff --git a/backend/tests/test_end_to_end.py b/backend/tests/test_end_to_end.py
+index b3634ca..f79b48d 100644
+--- a/backend/tests/test_end_to_end.py
++++ b/backend/tests/test_end_to_end.py
+@@ -33,7 +33,7 @@ def record(child_id, age=14, achieved=9):
+ 
+ def sign_up(email):
+     client = app.test_client()
+-    register = client.post('/api/auth/register', json={'email': email, 'password': PASSWORD, 'full_name': 'Dr'})
++    register = client.post('/api/auth/register', json={'email': email, 'password': PASSWORD, 'full_name': 'Dr', 'invite_code': 'test-invite-code'})
+     assert register.status_code == 201
+     login = client.post('/api/auth/login', json={'email': email, 'password': PASSWORD})
+     assert login.status_code == 200
+diff --git a/backend/tests/test_frontend.py b/backend/tests/test_frontend.py
+new file mode 100644
+index 0000000..e6a5014
+--- /dev/null
++++ b/backend/tests/test_frontend.py
+@@ -0,0 +1,47 @@
++import importlib
++import os
++
++import pytest
++
++
++@pytest.fixture
++def served(tmp_path, monkeypatch):
++    (tmp_path / 'assets').mkdir()
++    (tmp_path / 'index.html').write_text('<html>SOPHIA app</html>')
++    (tmp_path / 'assets' / 'app.js').write_text('console.log(1)')
++    monkeypatch.setenv('FRONTEND_DIR', str(tmp_path))
++    import config
++    import app as app_module
++
++    importlib.reload(config)
++    importlib.reload(app_module)
++    yield app_module.app.test_client()
++    monkeypatch.delenv('FRONTEND_DIR')
++    importlib.reload(config)
++    importlib.reload(app_module)
++
++
++def test_root_and_deep_links_return_the_app(served):
++    assert b'SOPHIA app' in served.get('/').data
++    assert b'SOPHIA app' in served.get('/children/5').data
++
++
++def test_static_files_are_served(served):
++    response = served.get('/assets/app.js')
++    assert response.status_code == 200
++    assert b'console.log' in response.data
++
++
++def test_unknown_api_paths_stay_json_404(served):
++    response = served.get('/api/nothing')
++    assert response.status_code == 404
++    assert response.get_json() == {'errors': ['Not found']}
++
++
++def test_api_routes_still_work_when_serving(served):
++    assert served.get('/api/health').get_json() == {'status': 'ok'}
++
++
++def test_no_frontend_routes_without_the_setting(db_client):
++    assert os.getenv('FRONTEND_DIR') is None
++    assert db_client.get('/').status_code == 404
+diff --git a/backend/tests/test_protection.py b/backend/tests/test_protection.py
+index dc62eed..2571c79 100644
+--- a/backend/tests/test_protection.py
++++ b/backend/tests/test_protection.py
+@@ -111,7 +111,7 @@ def test_public_routes_need_no_token(setup):
+     client, _ = setup
+     assert client.get('/api/health').status_code == 200
+     assert client.get('/api/health/db').status_code == 200
+-    register = {'email': 'new@example.com', 'password': 'longenough1', 'full_name': 'New'}
++    register = {'email': 'new@example.com', 'password': 'longenough1', 'full_name': 'New', 'invite_code': 'test-invite-code'}
+     assert client.post('/api/auth/register', json=register).status_code == 201
+     login = {'email': 'new@example.com', 'password': 'longenough1'}
+     assert client.post('/api/auth/login', json=login).status_code == 200
+diff --git a/flow_check.py b/flow_check.py
+new file mode 100644
+index 0000000..fc325a9
+--- /dev/null
++++ b/flow_check.py
+@@ -0,0 +1,203 @@
++import os, sys, time, json
++from playwright.sync_api import sync_playwright
++
++base = os.environ.get('BASE', 'http://localhost:5173')
++api = os.environ.get('API', 'http://localhost:5000/api')
++invite = os.environ.get('INVITE', 'pilot-code-123')
++pw = 'correct-horse-9'
++fails = []
++
++def run(browser, name, viewport, mobile):
++    u = int(time.time() * 1000) % 10**10
++    email = f'{name}{u}@example.com'
++    ctx = browser.new_context(viewport=viewport, is_mobile=mobile, has_touch=mobile)
++    page = ctx.new_page()
++    errors = []
++    page.on('console', lambda m: errors.append(m.text) if m.type == 'error' and 'Failed to load resource' not in m.text else None)
++    page.on('pageerror', lambda e: errors.append('PAGEERROR ' + str(e)))
++
++    def check(label, cond, extra=''):
++        print(('PASS ' if cond else 'FAIL ') + f'[{name}] ' + label, extra if not cond else '')
++        if not cond: fails.append(f'[{name}] {label}')
++
++    def overflow_ok(label):
++        check('no horizontal scroll: ' + label, page.evaluate('document.documentElement.scrollWidth <= window.innerWidth'))
++
++    def errs():
++        return [e.inner_text() for e in page.query_selector_all('form [id$=-error]')]
++
++    def token():
++        return json.loads(page.evaluate("localStorage.getItem('sophia.session')"))['token']
++
++    def get(path):
++        r = page.request.get(api + path, headers={'Authorization': 'Bearer ' + token()})
++        return r.json()
++
++    def login(password=pw):
++        page.fill('#email', email); page.fill('#password', password)
++        page.click('button[type=submit]')
++
++    def assess(child, age, counts):
++        page.fill('#child_id', child); page.fill('#age_months', age)
++        for k, (a, s) in counts.items():
++            page.click('text=Quick entry'); page.fill(f'#{k}_achieved', a); page.fill(f'#{k}_assessed', s)
++
++    ALL = lambda a, s: {k: (a, s) for k in ['cognitive', 'motor', 'language', 'social_emotional']}
++
++    # 1. logged out
++    page.goto(base + '/')
++    page.wait_for_url('**/login')
++    check('logged-out visit goes to login', page.url.endswith('/login'))
++    overflow_ok('login')
++
++    # 2. register with bad input then good
++    page.click('text=Create one'); page.wait_for_url('**/register'); overflow_ok('register')
++    page.click('button[type=submit]')
++    check('register: empty submit shows 5 messages', len(errs()) == 5, errs())
++    page.fill('#full_name', 'Dr Flow'); page.fill('#email', 'bad'); page.fill('#password', 'short'); page.fill('#confirm', 'other')
++    page.click('button[type=submit]')
++    check('register: bad email, short password, mismatch, no invite code', len(errs()) == 4, errs())
++    page.fill('#email', email); page.fill('#password', pw); page.fill('#confirm', pw)
++    page.fill('#invite_code', 'wrong'); page.click('button[type=submit]'); page.wait_for_selector('[role=alert]')
++    check('register: wrong invite code is refused', 'invite code' in page.inner_text('[role=alert]').lower() and '/register' in page.url)
++    page.fill('#invite_code', invite)
++    page.click('button[type=submit]'); page.wait_for_url('**/login')
++    check('register success shows notice and prefilled email', page.inner_text('[role=status]').startswith('Account created') and page.input_value('#email') == email)
++
++    # 3. login bad then good
++    page.fill('#email', ''); page.click('button[type=submit]')
++    check('login: empty submit', len(errs()) == 2, errs())
++    login('wrong-password'); page.wait_for_selector('[role=alert]')
++    check('login: wrong password message', page.inner_text('[role=alert]') == 'Invalid email or password')
++    page.fill('#password', pw); page.click('button[type=submit]'); page.wait_for_selector('text=No children screened yet.')
++    check('login success lands on dashboard (empty)', page.url == base + '/' and page.is_visible('text=No children screened yet.'))
++    check('screening notice visible', 'does not diagnose' in page.inner_text('footer'))
++    overflow_ok('dashboard empty')
++
++    # 4. assess: bad input
++    page.click('nav >> text=New assessment'); page.wait_for_selector('#child_id'); overflow_ok('assess form')
++    page.click('button[type=submit]')
++    check('assess: empty submit', len(errs()) >= 3, errs())
++    assess(f'a{u}', 'abc', {'cognitive': ('5', '')})
++    page.click('button[type=submit]')
++    check('assess: bad age and half-filled domain', 'Enter the age as a number, for example 6.5' in errs() and 'Enter how many were assessed' in errs(), errs())
++    assess(f'a{u}', '20', ALL('1', '10'))
++    page.click('button[type=submit]'); page.wait_for_selector('[role=alert]')
++    check('assess: unsupported age rejected by server, values kept', 'not supported' in page.inner_text('[role=alert]') and page.input_value('#age_months') == '20' and page.input_value('#cognitive_achieved') == '1')
++
++    # 5. save fails once (backend unreachable), then succeeds
++    page.fill('#age_months', '6')
++    page.route('**/api/score', lambda r: r.abort())
++    page.click('button[type=submit]'); page.wait_for_selector('[role=alert]:has-text("Cannot reach")')
++    check('assess: network failure message, form kept', page.input_value('#child_id') == f'a{u}' and page.input_value('#age_months') == '6')
++    page.unroute('**/api/score')
++    page.click('button[type=submit]'); page.wait_for_url('**/assess/result'); page.wait_for_selector('[data-testid=verdict]')
++    check('result: flagged child', page.inner_text('[data-testid=verdict]').startswith('Flagged for follow-up'))
++    overflow_ok('result')
++    page.reload(); page.wait_for_selector('[data-testid=verdict]')
++    check('result survives refresh', page.url.endswith('/assess/result'))
++
++    # 6. more children: typical, partial, double click
++    page.click('text=New assessment >> nth=-1'); page.wait_for_selector('#child_id')
++    assess(f'b{u}', '14', ALL('8', '10')); page.click('button[type=submit]'); page.wait_for_selector('[data-testid=verdict]')
++    check('result: typical child not flagged', page.inner_text('[data-testid=verdict]').startswith('Not flagged'))
++    page.click('nav >> text=New assessment'); page.wait_for_selector('#child_id')
++    assess(f'c{u}', '14', {'cognitive': ('3', '8'), 'language': ('1', '2')}); page.click('button[type=submit]'); page.wait_for_selector('[data-testid=verdict]')
++    check('result: partial child has no forest score and notes', 'not available' in page.inner_text('[data-testid=forest]') and 'Partial assessment' in page.inner_text('main'))
++    page.click('nav >> text=New assessment'); page.wait_for_selector('#child_id')
++    assess(f'd{u}', '6', ALL('8', '10')); page.dblclick('button[type=submit]'); page.wait_for_selector('[data-testid=verdict]')
++    kids = get('/children')['children']
++    d = [k for k in kids if k['child_id'] == f'd{u}']
++    check('double click stores one assessment', len(d) == 1 and d[0]['assessment_count'] == 1, d)
++
++    # 7. review: children list, detail, repeat assessment
++    page.click('nav >> text=Children'); page.wait_for_selector('[data-testid=row], [data-testid=empty]'); overflow_ok('children')
++    page.click('button:has-text("All children")')
++    check('children: all four listed', len(page.query_selector_all('[data-testid=row]')) == 4)
++    page.click(f'a:has-text("a{u}")'); page.wait_for_selector('h1:has-text("Child a")'); overflow_ok('child detail')
++    check('detail: flagged, one assessment', page.inner_text('[data-testid=verdict]').startswith('Flagged for follow-up') and '1 assessment.' in page.inner_text('h1 + p'))
++    child_url = page.url
++    page.click('text=New assessment for this child'); page.wait_for_selector('#child_id')
++    check('repeat assessment prefilled', page.input_value('#child_id') == f'a{u}')
++    assess(f'a{u}', '6', ALL('8', '10')); page.click('button[type=submit]'); page.wait_for_selector('[data-testid=verdict]')
++    page.goto(child_url); page.wait_for_selector('[data-testid=history-row]')
++    check('detail: two rows, latest not flagged', len(page.query_selector_all('[data-testid=history-row]')) == 2 and page.inner_text('[data-testid=verdict]').startswith('Not flagged'))
++
++    # 8. dashboard matches the API
++    page.click('nav >> text=Dashboard'); page.wait_for_selector('[data-testid=total]'); overflow_ok('dashboard')
++    kids = get('/children')['children']
++    flagged = sum(1 for k in kids if k['latest']['rule_based']['flag'] or (k['latest']['isolation_forest'] or {}).get('flag'))
++    total_assessments = sum(k['assessment_count'] for k in kids)
++    ui = {t: int(page.inner_text(f'[data-testid={t}]')) for t in ['total', 'flagged', 'not-flagged', 'assessments']}
++    check('dashboard equals API', ui == {'total': len(kids), 'flagged': flagged, 'not-flagged': len(kids) - flagged, 'assessments': total_assessments}, (ui, len(kids), flagged, total_assessments))
++    page.wait_for_selector('[data-testid=chart] .recharts-bar-rectangle')
++
++    # 9. model report
++    page.click('nav >> text=Model report'); page.wait_for_selector('[data-testid=rows]'); overflow_ok('model report')
++    check('model report loads', page.inner_text('[data-testid=rows]') == '516')
++
++    # 10. refresh on every protected route
++    for path, sel in [('/', '[data-testid=total]'), ('/children', '[data-testid=row], [data-testid=empty]'), (child_url.replace(base, ''), '[data-testid=history-row]'), ('/assess', '#child_id'), ('/model', '[data-testid=rows]')]:
++        page.goto(base + path); page.wait_for_selector(sel)
++        check(f'direct load works: {path}', page.url == base + path)
++    page.goto(base + '/no/such/page'); page.wait_for_selector('h1')
++    check('unknown address shows not found page', 'not found' in page.inner_text('h1').lower())
++    page.click('a'); page.wait_for_url(base + '/'); check('not found link returns home', True)
++
++    # 11. session lost during use (server says 401 on save)
++    page.click('nav >> text=New assessment'); page.wait_for_selector('#child_id')
++    assess(f'e{u}', '6', ALL('8', '10'))
++    page.route('**/api/score', lambda r: r.fulfill(status=401, content_type='application/json', body=json.dumps({'errors': ['Token has expired']})))
++    page.click('button[type=submit]'); page.wait_for_url('**/login')
++    check('expired session on save -> login with notice', page.inner_text('[role=status]') == 'Your session has expired. Sign in again.')
++    check('expired session: storage cleared', page.evaluate("localStorage.getItem('sophia.session')") is None)
++    page.unroute('**/api/score')
++    login(); page.wait_for_selector('#child_id')
++    check('after sign in, returns to the page being used', page.url == base + '/assess')
++
++    # 12. timer expiry on another page
++    page.click('nav >> text=Children'); page.wait_for_selector('[data-testid=row]')
++    sess = json.loads(page.evaluate("localStorage.getItem('sophia.session')")); sess['expiresAt'] = int(time.time() * 1000) + 2500
++    page.evaluate("v => localStorage.setItem('sophia.session', v)", json.dumps(sess))
++    page.reload(); page.wait_for_selector('[data-testid=row]')
++    page.wait_for_url('**/login', timeout=8000)
++    check('timer expiry logs out with notice', page.inner_text('[role=status]') == 'Your session has expired. Sign in again.')
++    login(); page.wait_for_selector('[data-testid=row]')
++    check('returns to /children after sign in', page.url == base + '/children')
++
++    # 13. expired on load
++    sess = json.loads(page.evaluate("localStorage.getItem('sophia.session')")); sess['expiresAt'] = int(time.time() * 1000) - 1000
++    page.evaluate("v => localStorage.setItem('sophia.session', v)", json.dumps(sess))
++    page.goto(base + '/model'); page.wait_for_url('**/login')
++    check('expired on load -> login with notice', page.inner_text('[role=status]') == 'Your session has expired. Sign in again.')
++    login(); page.wait_for_selector('[data-testid=rows]')
++    check('expired on load: returns to /model', page.url == base + '/model')
++
++    # 14. logout
++    page.click('text=Log out'); page.wait_for_url('**/login')
++    check('logout: login page, no expiry notice, storage cleared', page.query_selector('[role=status]') is None and page.evaluate("localStorage.getItem('sophia.session')") is None)
++    page.go_back(); page.wait_for_url('**/login')
++    check('logout: Back cannot reopen protected page', page.url.endswith('/login'))
++    page.goto(child_url); page.wait_for_url('**/login')
++    login(); page.wait_for_selector('[data-testid=history-row]')
++    check('deep link after logout returns to the child', page.url == child_url)
++    page.click('text=Log out'); page.wait_for_url('**/login')
++
++    # 15. other doctor cannot see these children
++    ctx2 = browser.new_context(); p2 = ctx2.new_page()
++    p2.goto(base + '/register'); p2.fill('#full_name', 'Dr Two'); p2.fill('#email', f'two{email}'); p2.fill('#password', pw); p2.fill('#confirm', pw); p2.fill('#invite_code', invite)
++    p2.click('button[type=submit]'); p2.wait_for_url('**/login'); p2.fill('#password', pw); p2.click('button[type=submit]'); p2.wait_for_selector('header')
++    p2.goto(child_url); p2.wait_for_selector('h1')
++    check('another doctor gets "Child not found"', p2.inner_text('h1') == 'Child not found' and f'a{u}' not in p2.inner_text('body'))
++    ctx2.close()
++
++    check('no unexpected console errors', not errors, errors)
++    ctx.close()
++
++with sync_playwright() as p:
++    b = p.chromium.launch()
++    which = sys.argv[1:] or ['desktop', 'phone']
++    if 'desktop' in which: run(b, 'desk', {'width': 1280, 'height': 900}, False)
++    if 'phone' in which: run(b, 'phone', {'width': 390, 'height': 844}, True)
++    b.close()
++print('ALL OK' if not fails else 'FAILURES: ' + '; '.join(fails))
+diff --git a/frontend/src/api/api.ts b/frontend/src/api/api.ts
+index 17c3880..9aad6d1 100644
+--- a/frontend/src/api/api.ts
++++ b/frontend/src/api/api.ts
+@@ -7,7 +7,7 @@ export type DatabaseHealth = { database: string }
+ export type Doctor = { id: number; email: string; full_name: string }
+ export type LoginResponse = { token: string; expires_in: number; doctor: Doctor }
+ 
+-export type RegisterInput = { email: string; password: string; full_name: string }
++export type RegisterInput = { email: string; password: string; full_name: string; invite_code: string }
+ export type LoginInput = { email: string; password: string }
+ 
+ export type DomainCounts = { achieved: number; assessed: number }
+diff --git a/frontend/src/components/AssessmentSummary.tsx b/frontend/src/components/AssessmentSummary.tsx
+index daef094..c31ac7d 100644
+--- a/frontend/src/components/AssessmentSummary.tsx
++++ b/frontend/src/components/AssessmentSummary.tsx
+@@ -3,6 +3,7 @@ import { DOMAINS } from '../domains.ts'
+ import { isFlagged } from '../flags.ts'
+ import { percent, zText } from '../format.ts'
+ import ZScale from './ZScale.tsx'
++import { REFERENCE_NOTE } from '../reference.ts'
+ 
+ type Props = {
+   assessment: Pick<Assessment, 'isolation_forest' | 'rule_based' | 'proportions' | 'z_scores'>
+@@ -100,6 +101,9 @@ export default function AssessmentSummary({ assessment }: Props) {
+           The marker shows where the child sits against the reference group for their age. The short grey tick is the
+           group average and the amber line is 2 standard deviations below it. The scale runs from -4 to +3.
+         </p>
++        <p data-testid="reference-note" className="max-w-prose text-xs text-slate-600">
++          {REFERENCE_NOTE}
++        </p>
+       </section>
+     </div>
+   )
+diff --git a/frontend/src/pages/Assess.tsx b/frontend/src/pages/Assess.tsx
+index 1ba4676..9defe4c 100644
+--- a/frontend/src/pages/Assess.tsx
++++ b/frontend/src/pages/Assess.tsx
+@@ -12,8 +12,8 @@ import {
+   type AssessmentValues,
+   type FieldErrors,
+ } from '../validation.ts'
++import { SUPPORTED_AGES } from '../reference.ts'
+ 
+-const SUPPORTED_AGES = 'Supported ages: 4.1 to 8.3, 12.0 to 16.0 and 22.5 to 29.3 months.'
+ 
+ type Mode = 'checklist' | 'counts'
+ 
+diff --git a/frontend/src/pages/Register.tsx b/frontend/src/pages/Register.tsx
+index 4fc6eff..00e9318 100644
+--- a/frontend/src/pages/Register.tsx
++++ b/frontend/src/pages/Register.tsx
+@@ -12,6 +12,7 @@ export default function Register() {
+   const [email, setEmail] = useState('')
+   const [password, setPassword] = useState('')
+   const [confirm, setConfirm] = useState('')
++  const [inviteCode, setInviteCode] = useState('')
+   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
+   const [serverErrors, setServerErrors] = useState<string[]>([])
+   const [submitting, setSubmitting] = useState(false)
+@@ -20,7 +21,7 @@ export default function Register() {
+     event.preventDefault()
+     if (submitting) return
+ 
+-    const found = validateRegistration({ full_name: fullName, email, password, confirm })
++    const found = validateRegistration({ full_name: fullName, email, password, confirm, invite_code: inviteCode })
+     setFieldErrors(found)
+     setServerErrors([])
+     const first = Object.keys(found)[0]
+@@ -31,7 +32,7 @@ export default function Register() {
+ 
+     setSubmitting(true)
+     try {
+-      const doctor = await api.register({ full_name: fullName.trim(), email: cleanEmail(email), password })
++      const doctor = await api.register({ full_name: fullName.trim(), email: cleanEmail(email), password, invite_code: inviteCode.trim() })
+       navigate('/login', { state: { registered: true, email: doctor.email } })
+     } catch (error) {
+       setServerErrors(error instanceof ApiError ? error.messages : ['Something went wrong. Please try again.'])
+@@ -78,6 +79,15 @@ export default function Register() {
+           onChange={setConfirm}
+           error={fieldErrors.confirm}
+         />
++        <FormField
++          id="invite_code"
++          label="Invite code"
++          hint="Accounts are by invitation. Use the code you were given."
++          autoComplete="off"
++          value={inviteCode}
++          onChange={setInviteCode}
++          error={fieldErrors.invite_code}
++        />
+         <button
+           type="submit"
+           disabled={submitting}
+diff --git a/frontend/src/reference.ts b/frontend/src/reference.ts
+new file mode 100644
+index 0000000..7b096b0
+--- /dev/null
++++ b/frontend/src/reference.ts
+@@ -0,0 +1,6 @@
++export const SUPPORTED_AGES = 'Supported ages: 4.1 to 8.3, 12.0 to 16.0 and 22.5 to 29.3 months.'
++
++export const REFERENCE_NOTE =
++  'Reference group: children from the South African cohorts of the Global Child Development Group data, not a Kenyan sample. ' +
++  SUPPORTED_AGES +
++  ' Other ages cannot be screened.'
+diff --git a/frontend/src/validation.ts b/frontend/src/validation.ts
+index 87f564c..5d9138c 100644
+--- a/frontend/src/validation.ts
++++ b/frontend/src/validation.ts
+@@ -31,6 +31,7 @@ export function validateRegistration(values: {
+   email: string
+   password: string
+   confirm: string
++  invite_code: string
+ }) {
+   const errors: FieldErrors = {}
+ 
+@@ -50,6 +51,8 @@ export function validateRegistration(values: {
+   if (values.confirm === '') errors.confirm = 'Confirm your password'
+   else if (values.confirm !== values.password) errors.confirm = 'Passwords do not match'
+ 
++  if (values.invite_code.trim() === '') errors.invite_code = 'Enter the invite code you were given'
++
+   return errors
+ }
+ 
+diff --git a/render.yaml b/render.yaml
+new file mode 100644
+index 0000000..48ecb32
+--- /dev/null
++++ b/render.yaml
+@@ -0,0 +1,19 @@
++services:
++  - type: web
++    name: sophia
++    runtime: docker
++    plan: free
++    healthCheckPath: /api/health
++    envVars:
++      - key: DATABASE_URL
++        fromDatabase:
++          name: sophia-db
++          property: connectionString
++      - key: SECRET_KEY
++        generateValue: true
++      - key: INVITE_CODE
++        sync: false
++
++databases:
++  - name: sophia-db
++    plan: free

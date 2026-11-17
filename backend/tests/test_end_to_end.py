@@ -33,7 +33,7 @@ def record(child_id, age=14, achieved=9):
 
 def sign_up(email):
     client = app.test_client()
-    register = client.post('/api/auth/register', json={'email': email, 'password': PASSWORD, 'full_name': 'Dr'})
+    register = client.post('/api/auth/register', json={'email': email, 'password': PASSWORD, 'full_name': 'Dr', 'invite_code': 'test-invite-code'})
     assert register.status_code == 201
     login = client.post('/api/auth/login', json={'email': email, 'password': PASSWORD})
     assert login.status_code == 200

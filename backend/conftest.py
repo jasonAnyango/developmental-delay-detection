@@ -7,6 +7,7 @@ load_dotenv()
 default_url = 'postgresql+psycopg2://postgres:password@localhost:5432/sophia_test'
 os.environ['DATABASE_URL'] = os.getenv('TEST_DATABASE_URL', default_url)
 os.environ['SECRET_KEY'] = 'test-secret-key-' + 'x' * 60
+os.environ['INVITE_CODE'] = 'test-invite-code'
 
 
 @pytest.fixture

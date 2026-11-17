@@ -4,7 +4,7 @@ from assessment import assess_batch, assess_record
 from config import BASE_DIR, Config
 from decorators import login_required
 from extensions import db, migrate
-from flask import Flask, g, jsonify, request
+from flask import Flask, g, jsonify, request, send_from_directory
 from flask_cors import CORS
 from model_store import artifacts
 from sqlalchemy import text
@@ -91,6 +91,17 @@ def score_batch():
     if errors:
         return jsonify({'errors': errors}), 400
     return jsonify(payload)
+
+if Config.FRONTEND_DIR:
+    @app.route('/', defaults={'path': ''})
+    @app.route('/<path:path>')
+    def frontend(path):
+        if path.startswith('api/'):
+            return not_found(None)
+        if path and os.path.isfile(os.path.join(Config.FRONTEND_DIR, path)):
+            return send_from_directory(Config.FRONTEND_DIR, path)
+        return send_from_directory(Config.FRONTEND_DIR, 'index.html')
+
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -35,6 +35,8 @@ class Config:
     SQLALCHEMY_DATABASE_URI = DATABASE_URL
     SECRET_KEY = SECRET_KEY
     TOKEN_HOURS = int(os.getenv('TOKEN_HOURS', '8'))
+    INVITE_CODE = os.getenv('INVITE_CODE', '')
+    FRONTEND_DIR = os.getenv('FRONTEND_DIR', '')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     if ':6543/' in DATABASE_URL:
         SQLALCHEMY_ENGINE_OPTIONS = {'poolclass': NullPool}
