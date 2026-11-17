@@ -7,7 +7,7 @@ export type DatabaseHealth = { database: string }
 export type Doctor = { id: number; email: string; full_name: string }
 export type LoginResponse = { token: string; expires_in: number; doctor: Doctor }
 
-export type RegisterInput = { email: string; password: string; full_name: string }
+export type RegisterInput = { email: string; password: string; full_name: string; invite_code: string }
 export type LoginInput = { email: string; password: string }
 
 export type DomainCounts = { achieved: number; assessed: number }

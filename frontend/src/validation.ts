@@ -31,6 +31,7 @@ export function validateRegistration(values: {
   email: string
   password: string
   confirm: string
+  invite_code: string
 }) {
   const errors: FieldErrors = {}
 
@@ -49,6 +50,8 @@ export function validateRegistration(values: {
 
   if (values.confirm === '') errors.confirm = 'Confirm your password'
   else if (values.confirm !== values.password) errors.confirm = 'Passwords do not match'
+
+  if (values.invite_code.trim() === '') errors.invite_code = 'Enter the invite code you were given'
 
   return errors
 }

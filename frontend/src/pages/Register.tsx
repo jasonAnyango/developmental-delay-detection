@@ -12,6 +12,7 @@ export default function Register() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
+  const [inviteCode, setInviteCode] = useState('')
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [serverErrors, setServerErrors] = useState<string[]>([])
   const [submitting, setSubmitting] = useState(false)
@@ -20,7 +21,7 @@ export default function Register() {
     event.preventDefault()
     if (submitting) return
 
-    const found = validateRegistration({ full_name: fullName, email, password, confirm })
+    const found = validateRegistration({ full_name: fullName, email, password, confirm, invite_code: inviteCode })
     setFieldErrors(found)
     setServerErrors([])
     const first = Object.keys(found)[0]
@@ -31,7 +32,7 @@ export default function Register() {
 
     setSubmitting(true)
     try {
-      const doctor = await api.register({ full_name: fullName.trim(), email: cleanEmail(email), password })
+      const doctor = await api.register({ full_name: fullName.trim(), email: cleanEmail(email), password, invite_code: inviteCode.trim() })
       navigate('/login', { state: { registered: true, email: doctor.email } })
     } catch (error) {
       setServerErrors(error instanceof ApiError ? error.messages : ['Something went wrong. Please try again.'])
@@ -77,6 +78,15 @@ export default function Register() {
           value={confirm}
           onChange={setConfirm}
           error={fieldErrors.confirm}
+        />
+        <FormField
+          id="invite_code"
+          label="Invite code"
+          hint="Accounts are by invitation. Use the code you were given."
+          autoComplete="off"
+          value={inviteCode}
+          onChange={setInviteCode}
+          error={fieldErrors.invite_code}
         />
         <button
           type="submit"

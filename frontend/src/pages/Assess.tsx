@@ -12,8 +12,8 @@ import {
   type AssessmentValues,
   type FieldErrors,
 } from '../validation.ts'
+import { SUPPORTED_AGES } from '../reference.ts'
 
-const SUPPORTED_AGES = 'Supported ages: 4.1 to 8.3, 12.0 to 16.0 and 22.5 to 29.3 months.'
 
 type Mode = 'checklist' | 'counts'
 

@@ -3,6 +3,7 @@ import { DOMAINS } from '../domains.ts'
 import { isFlagged } from '../flags.ts'
 import { percent, zText } from '../format.ts'
 import ZScale from './ZScale.tsx'
+import { REFERENCE_NOTE } from '../reference.ts'
 
 type Props = {
   assessment: Pick<Assessment, 'isolation_forest' | 'rule_based' | 'proportions' | 'z_scores'>
@@ -99,6 +100,9 @@ export default function AssessmentSummary({ assessment }: Props) {
         <p className="max-w-prose text-xs text-slate-600">
           The marker shows where the child sits against the reference group for their age. The short grey tick is the
           group average and the amber line is 2 standard deviations below it. The scale runs from -4 to +3.
+        </p>
+        <p data-testid="reference-note" className="max-w-prose text-xs text-slate-600">
+          {REFERENCE_NOTE}
         </p>
       </section>
     </div>
