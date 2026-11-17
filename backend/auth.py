@@ -1,3 +1,4 @@
+import hmac
 import re
 
 from flask import Blueprint, current_app, jsonify, request
@@ -15,6 +16,14 @@ MAX_PASSWORD_LENGTH = 128
 
 DUMMY_HASH = hash_password('not-a-real-password')
 BAD_LOGIN = 'Invalid email or password'
+BAD_INVITE = 'A valid invite code is required to register'
+
+
+def invite_code_ok(given):
+    expected = current_app.config['INVITE_CODE']
+    if not expected or not isinstance(given, str):
+        return False
+    return hmac.compare_digest(given.strip().encode(), expected.encode())
 
 
 def validate_registration(data):
@@ -53,7 +62,11 @@ def validate_registration(data):
 
 @auth.route('/register', methods=['POST'])
 def register():
-    clean, errors = validate_registration(request.get_json(silent=True))
+    data = request.get_json(silent=True)
+    if not invite_code_ok(data.get('invite_code') if isinstance(data, dict) else None):
+        return jsonify({'errors': [BAD_INVITE]}), 403
+
+    clean, errors = validate_registration(data)
     if errors:
         return jsonify({'errors': errors}), 400
 

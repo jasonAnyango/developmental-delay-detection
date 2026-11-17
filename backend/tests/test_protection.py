@@ -111,7 +111,7 @@ def test_public_routes_need_no_token(setup):
     client, _ = setup
     assert client.get('/api/health').status_code == 200
     assert client.get('/api/health/db').status_code == 200
-    register = {'email': 'new@example.com', 'password': 'longenough1', 'full_name': 'New'}
+    register = {'email': 'new@example.com', 'password': 'longenough1', 'full_name': 'New', 'invite_code': 'test-invite-code'}
     assert client.post('/api/auth/register', json=register).status_code == 201
     login = {'email': 'new@example.com', 'password': 'longenough1'}
     assert client.post('/api/auth/login', json=login).status_code == 200
