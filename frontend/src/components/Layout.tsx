@@ -21,7 +21,7 @@ export default function Layout() {
         Skip to content
       </a>
       <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-8 gap-y-2 px-4 py-3">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-8 gap-y-2 px-4 py-3">
           <Link to="/" className="flex items-center gap-2.5" aria-label="SOPHIA home">
             <BrandMark />
             <span className="text-lg font-bold tracking-tight text-brand-900">SOPHIA</span>
@@ -57,11 +57,11 @@ export default function Layout() {
           </div>
         </div>
       </header>
-      <main id="main" className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
+      <main id="main" className="mx-auto w-full max-w-7xl flex-1 px-4 py-8">
         <Outlet />
       </main>
       <footer className="border-t border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-5xl items-start gap-2 px-4 py-3 text-sm text-slate-600">
+        <div className="mx-auto flex max-w-7xl items-start gap-2 px-4 py-3 text-sm text-slate-600">
           <svg viewBox="0 0 20 20" className="mt-0.5 h-4 w-4 shrink-0 text-brand-700" aria-hidden="true">
             <circle cx="10" cy="10" r="8.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
             <path d="M10 9v5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />

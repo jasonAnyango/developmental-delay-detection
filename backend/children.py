@@ -1,7 +1,8 @@
 from flask import Blueprint, g, jsonify
 
-from access import assessment_counts, children_of, history_of, latest_assessments
+from access import assessment_counts, children_of, find_child, history_of, latest_assessments
 from decorators import login_required
+from extensions import db
 from serializers import format_time, serialize_assessment
 
 children = Blueprint('children', __name__, url_prefix='/api')
@@ -41,3 +42,15 @@ def child_history(child_id):
         'assessment_count': len(assessments),
         'assessments': [serialize_assessment(assessment) for assessment in assessments],
     })
+
+
+@children.route('/children/<int:child_id>', methods=['DELETE'])
+@login_required
+def delete_child(child_id):
+    child = find_child(g.doctor, child_id)
+    if child is None:
+        return jsonify({'errors': ['Child not found']}), 404
+
+    db.session.delete(child)
+    db.session.commit()
+    return jsonify({'deleted': child_id})

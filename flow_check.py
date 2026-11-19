@@ -123,6 +123,17 @@ def run(browser, name, viewport, mobile):
     page.goto(child_url); page.wait_for_selector('[data-testid=history-row]')
     check('detail: two rows, latest not flagged', len(page.query_selector_all('[data-testid=history-row]')) == 2 and page.inner_text('[data-testid=verdict]').startswith('Not flagged'))
 
+    # 7b. history chart and deleting a child
+    page.click('button:has-text("Chart")'); page.wait_for_selector('[data-testid=history-chart] .recharts-line', state='attached'); overflow_ok('history chart')
+    check('detail: chart view has one line per domain', len(page.query_selector_all('[data-testid=history-chart] .recharts-line')) == 4)
+    page.click('button:has-text("Table")'); page.wait_for_selector('[data-testid=history-row]')
+    page.goto(base + '/children'); page.wait_for_selector('[data-testid=row]'); page.click('button:has-text("All children")')
+    page.click(f'a:has-text("d{u}")'); page.wait_for_selector('[data-testid=delete-start]')
+    page.click('[data-testid=delete-start]'); overflow_ok('delete confirmation'); page.click('button:has-text("Cancel")')
+    check('delete: cancel keeps the child', any(k['child_id'] == f'd{u}' for k in get('/children')['children']))
+    page.click('[data-testid=delete-start]'); page.click('[data-testid=delete-confirm]'); page.wait_for_url(base + '/children')
+    check('delete: child removed', not any(k['child_id'] == f'd{u}' for k in get('/children')['children']))
+
     # 8. dashboard matches the API
     page.click('nav >> text=Dashboard'); page.wait_for_selector('[data-testid=total]'); overflow_ok('dashboard')
     kids = get('/children')['children']
