@@ -63,6 +63,8 @@ export type ChildHistory = {
   assessments: Assessment[]
 }
 
+export type DeleteChildResponse = { deleted: number }
+
 export type ScoreSummary = { mean: number; std: number; min: number; median: number; max: number }
 export type FlagCount = { flagged: number; rate: number }
 export type FoldSummary = {
@@ -104,6 +106,7 @@ export const api = {
   children: () => request<ChildrenResponse>('/children'),
   evaluation: () => request<Evaluation>('/evaluation'),
   child: (id: number) => request<ChildHistory>(`/children/${id}`),
+  deleteChild: (id: number) => request<DeleteChildResponse>(`/children/${id}`, { method: 'DELETE' }),
   checklist: (age: number) => request<Checklist>(`/checklist?age_months=${encodeURIComponent(age)}`),
   score: (input: ScoreInput) => request<ScoreResult>('/score', { method: 'POST', body: input }),
 }

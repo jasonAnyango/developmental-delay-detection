@@ -124,8 +124,8 @@ def test_number_of_queries_does_not_grow_with_assessments(auth_client):
     assert len(statements) <= 6
 
 
-@pytest.mark.parametrize('method', ['post', 'put', 'delete'])
-def test_history_route_is_read_only(auth_client, method):
+@pytest.mark.parametrize('method', ['post', 'put', 'patch'])
+def test_history_route_only_reads_and_deletes(auth_client, method):
     assert getattr(auth_client, method)('/api/children/1').status_code == 405
 
 
